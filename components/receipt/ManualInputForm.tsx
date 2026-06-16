@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from "sonner";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -124,13 +125,13 @@ export default function ManualInputForm({ initialData }: { initialData?: any }) 
 
       if (!response.ok) throw new Error('Gagal menyimpan transaksi');
 
-      alert('Data berhasil disimpan!');
+      toast.success(data.id ? 'Data berhasil diperbarui!' : 'Data berhasil disimpan!');
       router.push('/dashboard/database');
       // For refreshing parent components if used inside a modal
       if (data.id) window.location.reload(); 
     } catch (error) {
       console.error(error);
-      alert('Gagal menyimpan transaksi ke database.');
+      toast.error('Gagal menyimpan transaksi ke database.');
     } finally {
       setIsSubmitting(false);
     }

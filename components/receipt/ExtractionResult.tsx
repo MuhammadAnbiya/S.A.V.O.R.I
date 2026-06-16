@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from "sonner";
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -122,11 +123,11 @@ export default function ExtractionResult({ initialData, onCancel }: ExtractionRe
         throw new Error('Gagal menyimpan transaksi');
       }
 
-      alert('Transaksi berhasil disimpan!');
+      toast.success('Transaksi berhasil disimpan!');
       router.push('/dashboard/database');
     } catch (error) {
       console.error(error);
-      alert('Gagal menyimpan transaksi ke database.');
+      toast.error('Gagal menyimpan transaksi ke database.');
     } finally {
       setIsSubmitting(false);
     }

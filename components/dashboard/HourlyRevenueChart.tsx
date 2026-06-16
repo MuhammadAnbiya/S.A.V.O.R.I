@@ -7,19 +7,24 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 export default function HourlyRevenueChart() {
   const [metric, setMetric] = useState<'amount' | 'count'>('amount');
 
-  // Mock data for Hourly
-  const data = Array.from({ length: 15 }, (_, i) => {
-    const hour = i + 8; // 08:00 to 22:00
-    // Peak hours: 12, 13, 18, 19
-    const isPeak = [12, 13, 18, 19].includes(hour);
-    const count = isPeak ? Math.floor(Math.random() * 30 + 50) : Math.floor(Math.random() * 20 + 10);
-    const amount = count * Math.floor(Math.random() * 20000 + 30000); // 30k-50k per trx
-    return {
-      hour: `${hour.toString().padStart(2, '0')}:00`,
-      count,
-      amount
-    };
-  });
+  // Fixed mock data for Hourly to prevent hydration mismatch
+  const data = [
+    { hour: "08:00", count: 12, amount: 450000 },
+    { hour: "09:00", count: 18, amount: 650000 },
+    { hour: "10:00", count: 15, amount: 550000 },
+    { hour: "11:00", count: 22, amount: 850000 },
+    { hour: "12:00", count: 68, amount: 2850000 }, // Peak
+    { hour: "13:00", count: 55, amount: 2150000 }, // Peak
+    { hour: "14:00", count: 25, amount: 950000 },
+    { hour: "15:00", count: 18, amount: 720000 },
+    { hour: "16:00", count: 20, amount: 800000 },
+    { hour: "17:00", count: 35, amount: 1450000 },
+    { hour: "18:00", count: 75, amount: 3150000 }, // Peak
+    { hour: "19:00", count: 82, amount: 3550000 }, // Peak
+    { hour: "20:00", count: 45, amount: 1850000 },
+    { hour: "21:00", count: 28, amount: 1150000 },
+    { hour: "22:00", count: 12, amount: 480000 },
+  ];
 
   const sortedByMetric = [...data].sort((a, b) => b[metric] - a[metric]);
   const peakHours = sortedByMetric.slice(0, 3).map(d => d.hour);

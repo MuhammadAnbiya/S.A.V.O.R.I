@@ -7,20 +7,59 @@ export default function HeatmapPerforma() {
   const branches = ['Sudirman', 'Kemang', 'Blok M', 'PIK', 'Kelapa Gading'];
   const days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 
-  // Generate random heatmap data relative to average
-  const heatmapData = branches.map(branch => {
-    return days.map(day => {
-      // Create some variance, weekends generally higher
-      const base = ['Jum', 'Sab', 'Min'].includes(day) ? 1.5 : 0.8;
-      const intensity = Math.random() * base; // 0.0 to 1.5
-      return {
-        branch,
-        day,
-        intensity: intensity > 1 ? 1 : intensity, // clamp to 1
-        value: Math.floor((intensity * 5000000) + 1000000) // 1M to 6M
-      };
-    });
-  });
+  // Fixed heatmap data to prevent hydration mismatch
+  const heatmapData = [
+    // Sudirman
+    [
+      { branch: 'Sudirman', day: 'Sen', intensity: 0.6, value: 3100000 },
+      { branch: 'Sudirman', day: 'Sel', intensity: 0.5, value: 2800000 },
+      { branch: 'Sudirman', day: 'Rab', intensity: 0.7, value: 3500000 },
+      { branch: 'Sudirman', day: 'Kam', intensity: 0.8, value: 4200000 },
+      { branch: 'Sudirman', day: 'Jum', intensity: 1.0, value: 5500000 },
+      { branch: 'Sudirman', day: 'Sab', intensity: 0.4, value: 2500000 }, // Office area, low on weekend
+      { branch: 'Sudirman', day: 'Min', intensity: 0.3, value: 2000000 },
+    ],
+    // Kemang
+    [
+      { branch: 'Kemang', day: 'Sen', intensity: 0.3, value: 2100000 },
+      { branch: 'Kemang', day: 'Sel', intensity: 0.4, value: 2500000 },
+      { branch: 'Kemang', day: 'Rab', intensity: 0.5, value: 2800000 },
+      { branch: 'Kemang', day: 'Kam', intensity: 0.7, value: 3500000 },
+      { branch: 'Kemang', day: 'Jum', intensity: 0.9, value: 4800000 },
+      { branch: 'Kemang', day: 'Sab', intensity: 1.0, value: 6500000 }, // Hangout area
+      { branch: 'Kemang', day: 'Min', intensity: 0.9, value: 5200000 },
+    ],
+    // Blok M
+    [
+      { branch: 'Blok M', day: 'Sen', intensity: 0.5, value: 2700000 },
+      { branch: 'Blok M', day: 'Sel', intensity: 0.6, value: 3100000 },
+      { branch: 'Blok M', day: 'Rab', intensity: 0.5, value: 2900000 },
+      { branch: 'Blok M', day: 'Kam', intensity: 0.6, value: 3200000 },
+      { branch: 'Blok M', day: 'Jum', intensity: 0.8, value: 4500000 },
+      { branch: 'Blok M', day: 'Sab', intensity: 1.0, value: 5800000 },
+      { branch: 'Blok M', day: 'Min', intensity: 0.8, value: 4600000 },
+    ],
+    // PIK
+    [
+      { branch: 'PIK', day: 'Sen', intensity: 0.2, value: 1500000 },
+      { branch: 'PIK', day: 'Sel', intensity: 0.3, value: 1800000 },
+      { branch: 'PIK', day: 'Rab', intensity: 0.3, value: 1900000 },
+      { branch: 'PIK', day: 'Kam', intensity: 0.4, value: 2200000 },
+      { branch: 'PIK', day: 'Jum', intensity: 0.7, value: 3800000 },
+      { branch: 'PIK', day: 'Sab', intensity: 1.0, value: 6800000 },
+      { branch: 'PIK', day: 'Min', intensity: 1.0, value: 6500000 },
+    ],
+    // Kelapa Gading
+    [
+      { branch: 'Kelapa Gading', day: 'Sen', intensity: 0.4, value: 2500000 },
+      { branch: 'Kelapa Gading', day: 'Sel', intensity: 0.5, value: 2800000 },
+      { branch: 'Kelapa Gading', day: 'Rab', intensity: 0.4, value: 2600000 },
+      { branch: 'Kelapa Gading', day: 'Kam', intensity: 0.5, value: 2900000 },
+      { branch: 'Kelapa Gading', day: 'Jum', intensity: 0.6, value: 3500000 },
+      { branch: 'Kelapa Gading', day: 'Sab', intensity: 0.9, value: 5100000 },
+      { branch: 'Kelapa Gading', day: 'Min', intensity: 0.8, value: 4800000 },
+    ],
+  ];
 
   // Helper to determine background color based on intensity
   const getBackgroundColor = (intensity: number) => {
