@@ -19,8 +19,10 @@ build/
 .claude/
 .vscode/
 
-struct_1.jpeg
-struct_2.jpeg
-struct_3.jpeg
+# image
+*.jpeg
+*.jpg
+*.png
 
-supabase_schema.sql
+#database
+*.db
