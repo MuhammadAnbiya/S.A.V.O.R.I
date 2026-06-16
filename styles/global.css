@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Salin SEMUA token dari DESIGN.md kamu ke sini */
+    --primary: #1A3C5E;
+    --primary-light: #2E5C8F;
+    --accent: #E8863A;
+    --success: #27AE60;
+    --warning: #F39C12;
+    --danger: #E74C3C;
+    --ai-purple: #6C3483;
+    --bg-main: #F4F6F9;
+    --bg-card: #FFFFFF;
+    --text-primary: #1C2833;
+    --text-secondary: #5D6D7E;
+    --border: #D5D8DC;
+
+    /* Tambahkan spacing, radius, shadow dari DESIGN.md */
+  }
+
+  body {
+    @apply bg-bg-main text-text-primary font-sans;
+  }
+}

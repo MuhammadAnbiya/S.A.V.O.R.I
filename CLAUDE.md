@@ -10,6 +10,20 @@ File ini adalah panduan utama bagi AI coder (Claude Code atau sejenisnya) untuk 
 
 ---
 
+## ⚠️ WAJIB DIBACA SEBELUM MENULIS KODE APAPUN
+
+Sebelum mengerjakan task apapun yang menyentuh UI, komponen, 
+halaman, atau styling, baca dua file ini terlebih dahulu:
+
+1. `CLAUDE.md` (file ini) — arsitektur, API, database, aturan coding
+2. `DESIGN.md` — sistem desain, warna, tipografi, komponen, spacing
+
+Kedua file ini adalah single source of truth yang tidak boleh 
+dilanggar. Jika ada konflik antara keduanya, DESIGN.md menang 
+untuk keputusan visual, CLAUDE.md menang untuk keputusan teknis.
+
+---
+
 ## 1. RINGKASAN PROYEK
 
 SAVORI adalah platform **Business Intelligence berbasis web** yang dirancang khusus untuk pemilik usaha Food & Beverage (restoran, kafe, warung makan). Platform ini menggabungkan tiga kapabilitas utama:
@@ -645,6 +659,16 @@ interface FilterState {
 ---
 
 ## 9. DESIGN SYSTEM
+
+Seluruh design system ada di file `DESIGN.md` di root project.
+Baca file tersebut sepenuhnya sebelum membuat atau memodifikasi
+komponen UI apapun.
+
+Ringkasan cepat (detail lengkap di DESIGN.md):
+- Primary: #1A3C5E | Accent: #E8863A | Success: #27AE60 | Danger: #E74C3C
+- Background: #F4F6F9 | Card: #FFFFFF | Border: #D5D8DC
+- Font: Arial | Monospace untuk angka: Courier New
+- Semua spacing, radius, shadow — ikuti token di DESIGN.md
 
 ### Color Palette
 
