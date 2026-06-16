@@ -17,3 +17,10 @@ build/
 .DS_Store
 *.log
 .claude/
+.vscode/
+
+struct_1.jpeg
+struct_2.jpeg
+struct_3.jpeg
+
+supabase_schema.sql

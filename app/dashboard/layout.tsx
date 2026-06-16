@@ -12,10 +12,15 @@ export default function DashboardLayout({
         <div className="p-4">
           <h2 className="text-xl font-bold">SAVORI</h2>
           <nav className="mt-6 space-y-2">
-            <a href="/dashboard/overview" className="px-3 py-2 rounded text-sm font-medium hover:bg-primary-light">
+            <a href="/dashboard/overview" className="block px-3 py-2 rounded text-sm font-medium hover:bg-primary-light">
               Overview
             </a>
-            {/* We'll add more links later */}
+            <a href="/dashboard/input-data" className="block px-3 py-2 rounded text-sm font-medium hover:bg-primary-light">
+              Input Data
+            </a>
+            <a href="/dashboard/database" className="block px-3 py-2 rounded text-sm font-medium hover:bg-primary-light">
+              Database Transaksi
+            </a>
           </nav>
         </div>
       </aside>

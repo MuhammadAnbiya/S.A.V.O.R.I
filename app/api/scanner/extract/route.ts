@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/better-auth';
+import { createClient } from '@/utils/supabase/server';
+import { cookies } from 'next/headers';
 import { extractReceiptData } from '@/lib/gemini';
 
 /**
@@ -9,7 +10,13 @@ import { extractReceiptData } from '@/lib/gemini';
 export async function POST(request: NextRequest) {
   try {
     // 1. Validate session
-    const session = await getSession();
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
     if (!session) {
       return NextResponse.json(
         {
@@ -94,7 +101,7 @@ export async function POST(request: NextRequest) {
         status: 'error',
         error: {
           code: 'INTERNAL_ERROR',
-          message: 'Failed to process receipt',
+          message: error.message || 'Failed to process receipt',
           details: {
             // In development, we might want to include the error message, but in production we should hide it
             // However, following the CLAUDE.md, we can include details for debugging
