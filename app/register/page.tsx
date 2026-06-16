@@ -30,7 +30,7 @@ export default function RegisterPage() {
 
     setIsLoading(false);
     if (result && "error" in result) {
-      setError(result.error);
+      setError(result.error || "Pendaftaran gagal");
     } else if (result && "success" in result) {
       // Email confirmation required - show success message
       setSuccessMessage(result.message);

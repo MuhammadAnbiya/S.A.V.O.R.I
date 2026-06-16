@@ -63,13 +63,13 @@ export default function HourlyRevenueChart() {
               width={40}
             />
             <Tooltip 
-              formatter={(value: number) => metric === 'amount' 
+              formatter={(value: any) => metric === 'amount' 
                 ? [new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value), 'Pendapatan']
                 : [value, 'Transaksi']
               }
               cursor={{ fill: '#F1F5F9' }}
             />
-            <Bar dataKey={metric} radius={[0, 4, 4, 0]} barSize={12} label={{ position: 'right', fill: '#64748B', fontSize: 10, formatter: (val: number) => metric === 'amount' ? `${(val/1000).toFixed(0)}k` : val }}>
+            <Bar dataKey={metric} radius={[0, 4, 4, 0]} barSize={12} label={{ position: 'right', fill: '#64748B', fontSize: 10, formatter: (val: any) => metric === 'amount' ? `${(val/1000).toFixed(0)}k` : val }}>
               {data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={peakHours.includes(entry.hour) ? 'var(--accent)' : '#CBD5E1'} />
               ))}

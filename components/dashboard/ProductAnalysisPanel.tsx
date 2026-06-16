@@ -79,7 +79,7 @@ export default function ProductAnalysisPanel() {
                     <td className="py-2 text-text-secondary">#{p.rank}</td>
                     <td className="py-2 flex items-center gap-2">
                       {p.name}
-                      {p.drop > 20 && <AlertTriangle className="w-3 h-3 text-warning" title="Turun drastis >20%" />}
+                      {p.drop > 20 && <span title="Turun drastis >20%"><AlertTriangle className="w-3 h-3 text-warning" /></span>}
                     </td>
                     <td className="py-2 text-right text-danger">-{p.drop}%</td>
                   </tr>
@@ -103,14 +103,14 @@ export default function ProductAnalysisPanel() {
                   outerRadius={110}
                   paddingAngle={5}
                   dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                   labelLine={false}
                 >
                   {data.bcg_matrix.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
                 </Pie>
-                <RechartsTooltip formatter={(value: number) => [`${value} Produk`, 'Jumlah']} />
+                <RechartsTooltip formatter={(value: any) => [`${value} Produk`, 'Jumlah']} />
                 <Legend verticalAlign="bottom" height={36}/>
               </PieChart>
             </ResponsiveContainer>

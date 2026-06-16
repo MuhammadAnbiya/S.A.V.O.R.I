@@ -54,7 +54,7 @@ export default function ChartRenderer({ chartType, data }: { chartType: string, 
                 outerRadius={80}
                 dataKey={valueKey}
                 nameKey={labelKey}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
               >
                 {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

@@ -37,11 +37,11 @@ export default function WeeklyRevenueChart() {
               tickFormatter={(val) => `${(val / 1000000).toFixed(1)}M`}
             />
             <Tooltip 
-              formatter={(value: number) => [new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value), 'Pendapatan']}
+              formatter={(value: any) => [new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value), 'Pendapatan']}
               cursor={{ fill: '#F1F5F9' }}
             />
             <ReferenceLine y={avgSales} stroke="#94A3B8" strokeDasharray="3 3" label={{ position: 'top', value: 'Avg', fill: '#94A3B8', fontSize: 10 }} />
-            <Bar dataKey="sales" radius={[4, 4, 0, 0]} label={{ position: 'top', formatter: (val: number) => `${(val/1000000).toFixed(1)}M`, fill: '#64748B', fontSize: 10 }}>
+            <Bar dataKey="sales" radius={[4, 4, 0, 0]} label={{ position: 'top', formatter: (val: any) => `${(val/1000000).toFixed(1)}M`, fill: '#64748B', fontSize: 10 }}>
               {data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.sales === maxSales ? 'var(--primary)' : 'var(--primary-light)'} />
               ))}

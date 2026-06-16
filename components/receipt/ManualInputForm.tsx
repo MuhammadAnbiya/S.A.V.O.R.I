@@ -210,7 +210,7 @@ export default function ManualInputForm({ initialData }: { initialData?: any }) 
               </tr>
             </thead>
             <tbody>
-              {data.items.map((item) => (
+              {data.items.map((item: any) => (
                 <tr key={item.id} className="border-b last:border-0">
                   <td className="p-2">
                     <Input 

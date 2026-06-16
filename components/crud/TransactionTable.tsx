@@ -16,7 +16,7 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      const allIds = new Set(transactions.map((t: any) => t.id));
+      const allIds = new Set<string>(transactions.map((t: any) => t.id));
       setSelectedIds(allIds);
       onSelectionChange(Array.from(allIds));
     } else {

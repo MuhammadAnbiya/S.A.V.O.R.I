@@ -46,14 +46,14 @@ export default function MultiChannelAnalysis() {
                   outerRadius={90}
                   paddingAngle={5}
                   dataKey="value"
-                  label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => `${((percent || 0) * 100).toFixed(0)}%`}
                   labelLine={false}
                 >
                   {channelData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <RechartsTooltip formatter={(value: number) => [`${value}%`, 'Proporsi']} />
+                <RechartsTooltip formatter={(value: any) => [`${value}%`, 'Proporsi']} />
                 <Legend verticalAlign="bottom" height={36}/>
               </PieChart>
             </ResponsiveContainer>
