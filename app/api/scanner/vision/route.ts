@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { extractReceiptData } from '@/lib/gemini';
+import { extractReceiptDataQwen } from '@/lib/qwen-vl';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,14 +19,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: 'error', error: { message: 'Missing image data' } }, { status: 400 });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      return NextResponse.json({ 
-        status: 'error', 
-        error: { message: 'GEMINI_API_KEY not configured' } 
-      }, { status: 500 });
-    }
+    const engineMode = process.env.VISION_ENGINE || 'gemini';
+    let parsedData;
 
-    const parsedData = await extractReceiptData(imageBase64, mimeType);
+    if (engineMode === 'qwen') {
+      if (!process.env.QWEN_API_KEY) {
+        return NextResponse.json({ 
+          status: 'error', 
+          error: { message: 'QWEN_API_KEY not configured' } 
+        }, { status: 500 });
+      }
+      parsedData = await extractReceiptDataQwen(imageBase64, mimeType);
+    } else {
+      if (!process.env.GEMINI_API_KEY) {
+        return NextResponse.json({ 
+          status: 'error', 
+          error: { message: 'GEMINI_API_KEY not configured' } 
+        }, { status: 500 });
+      }
+      parsedData = await extractReceiptData(imageBase64, mimeType);
+    }
 
     // Apply the exact same robust sanitization logic we built for Groq
     const sanitizedData = sanitizeReceiptData(parsedData);
