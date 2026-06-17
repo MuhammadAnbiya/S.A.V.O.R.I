@@ -17,15 +17,15 @@ export default function InputDataUnifiedPage() {
       </div>
 
       <Tabs defaultValue="scanner" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-8 h-12 bg-white border border-border shadow-sm">
-          <TabsTrigger value="scanner" className="text-base data-[state=active]:bg-primary data-[state=active]:text-white">
-            <Camera className="w-4 h-4 mr-2" /> Scanner Kamera
+        <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3 mb-8 !h-14 !p-1.5 bg-white border border-border !rounded-full shadow-sm">
+          <TabsTrigger value="scanner" className="text-sm md:text-base font-semibold !rounded-full !h-full transition-all duration-200 hover:text-ink hover:bg-surface-soft/40 data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-sm">
+            <Camera className="w-4.5 h-4.5 mr-2" /> Scanner Kamera
           </TabsTrigger>
-          <TabsTrigger value="upload" className="text-base data-[state=active]:bg-primary data-[state=active]:text-white">
-            <UploadCloud className="w-4 h-4 mr-2" /> Upload File
+          <TabsTrigger value="upload" className="text-sm md:text-base font-semibold !rounded-full !h-full transition-all duration-200 hover:text-ink hover:bg-surface-soft/40 data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-sm">
+            <UploadCloud className="w-4.5 h-4.5 mr-2" /> Upload File
           </TabsTrigger>
-          <TabsTrigger value="manual" className="text-base data-[state=active]:bg-primary data-[state=active]:text-white">
-            <Edit3 className="w-4 h-4 mr-2" /> Input Manual
+          <TabsTrigger value="manual" className="text-sm md:text-base font-semibold !rounded-full !h-full transition-all duration-200 hover:text-ink hover:bg-surface-soft/40 data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-sm">
+            <Edit3 className="w-4.5 h-4.5 mr-2" /> Input Manual
           </TabsTrigger>
         </TabsList>
 
