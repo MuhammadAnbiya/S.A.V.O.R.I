@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+import { openai, CHAT_MODEL } from '@/lib/llm-provider';
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,21 +49,23 @@ Format: { "chart_type": "table|bar|line|pie|text", "results": [{"label": "x", "v
     let aiResponseText = "";
     
     try {
-      if (!process.env.GEMINI_API_KEY) throw new Error("No Gemini API Key");
-      
-      const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
-      
-      const chat = model.startChat({
-        history: [
-          { role: 'user', parts: [{ text: systemPrompt }] },
-          { role: 'model', parts: [{ text: '{"chart_type": "text", "results": [], "explanation": "Understood. I will analyze the data safely and return only JSON."}' }] }
-        ]
+      const response = await openai.chat.completions.create({
+        model: CHAT_MODEL,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "assistant", content: '{"chart_type": "text", "results": [], "explanation": "Understood. I will analyze the data safely and return only JSON."}' },
+          ...conversationHistory.map((m: any) => ({
+            role: m.role === 'model' ? 'assistant' : 'user',
+            content: m.content
+          })),
+          { role: "user", content: userMessage }
+        ],
+        response_format: { type: "json_object" }
       });
 
-      const result = await chat.sendMessage(userMessage);
-      aiResponseText = result.response.text();
+      aiResponseText = response.choices[0].message.content || "{}";
     } catch (aiError) {
-      console.warn("Gemini API error:", aiError);
+      console.warn("Local LLM API error:", aiError);
       return NextResponse.json({
         query: "Data analysis via AI context",
         results: [],

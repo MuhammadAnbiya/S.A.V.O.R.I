@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
-import { extractReceiptData } from '@/lib/gemini';
+import { extractReceiptDataLocal as extractReceiptData } from '@/lib/llm-provider';
 
 /**
  * POST /api/scanner/extract
