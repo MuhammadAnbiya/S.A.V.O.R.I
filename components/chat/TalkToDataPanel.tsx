@@ -100,24 +100,8 @@ export default function TalkToDataPanel() {
       <button
         onClick={() => setIsOpen(v => !v)}
         aria-label="Talk to Data"
-        style={{
-          position: 'fixed',
-          bottom: '1.5rem',
-          right: '1.5rem',
-          width: '52px',
-          height: '52px',
-          borderRadius: '50%',
-          backgroundColor: '#cc785c',
-          color: '#ffffff',
-          border: 'none',
-          boxShadow: '0 4px 20px rgba(204,120,92,0.45)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          zIndex: 50,
-          transition: 'transform 150ms ease, background-color 150ms ease',
-        }}
+        className="fixed z-50 flex items-center justify-center w-[52px] h-[52px] rounded-full border-none shadow-[0_4px_20px_rgba(204,120,92,0.45)] cursor-pointer transition-all duration-150 right-6 bottom-[calc(env(safe-area-inset-bottom)+90px)] md:bottom-6"
+        style={{ backgroundColor: '#cc785c', color: '#ffffff' }}
         onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#a9583e')}
         onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#cc785c')}
       >

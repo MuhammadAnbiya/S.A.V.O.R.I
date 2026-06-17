@@ -209,7 +209,7 @@ export default function ManualInputForm({ initialData }: { initialData?: any }) 
           </Button>
         </div>
 
-        <div className="border rounded-md overflow-hidden">
+        <div className="border rounded-md overflow-hidden overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 border-b">
               <tr>

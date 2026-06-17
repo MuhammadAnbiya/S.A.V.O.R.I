@@ -45,7 +45,7 @@ export default function CameraScanner() {
 
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1080 }, height: { ideal: 1920 } },
         audio: false,
       });
 
@@ -175,7 +175,7 @@ export default function CameraScanner() {
 
       {/* Camera viewport */}
       <div
-        style={{ position: 'relative', width: '100%', maxWidth: '480px', aspectRatio: '4/3', backgroundColor: '#181715', borderRadius: '0.75rem', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        style={{ position: 'relative', width: '100%', maxWidth: '400px', aspectRatio: '3/4', backgroundColor: '#181715', borderRadius: '0.75rem', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
         {/* Video feed — always rendered so ref is available */}
         <video
@@ -189,7 +189,8 @@ export default function CameraScanner() {
         {/* Capture guide overlay */}
         {cameraState === 'active' && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-            <div style={{ width: '75%', height: '75%', border: '2px solid rgba(204,120,92,0.7)', borderRadius: '0.5rem', boxShadow: '0 0 0 9999px rgba(0,0,0,0.35)' }} />
+            {/* Outline berbentuk vertikal memanjang (menyerupai struk belanja) */}
+            <div style={{ width: '65%', height: '85%', border: '2px solid rgba(204,120,92,0.8)', borderRadius: '0.5rem', boxShadow: '0 0 0 9999px rgba(0,0,0,0.45)' }} />
           </div>
         )}
 

@@ -80,8 +80,8 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
 
   return (
     <Card className="bg-bg-card rounded-lg shadow-sm border border-border overflow-hidden h-full flex flex-col">
-      <div className="p-4 border-b flex justify-between items-center bg-white">
-        <div className="relative w-72">
+      <div className="p-4 border-b flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white">
+        <div className="relative w-full sm:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input 
             placeholder="Cari vendor atau nama barang..." 
@@ -204,8 +204,8 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
         </table>
       </div>
 
-      <div className="p-4 border-t flex justify-between items-center text-sm text-text-secondary bg-white">
-        <div className="flex items-center space-x-2">
+      <div className="p-4 border-t flex flex-col md:flex-row gap-4 justify-between items-center text-sm text-text-secondary bg-white">
+        <div className="flex items-center space-x-2 w-full md:w-auto justify-between md:justify-start">
           <span>Baris per halaman:</span>
           <select className="border border-border rounded px-2 py-1 bg-main focus:outline-none focus:ring-1 focus:ring-primary">
             <option>25</option>
@@ -213,10 +213,10 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
             <option>100</option>
           </select>
         </div>
-        <span>Total {processedTransactions.length} transaksi ditemukan</span>
-        <div className="flex gap-1">
-          <Button variant="outline" size="sm" disabled className="bg-white">Sebelumnya</Button>
-          <Button variant="outline" size="sm" className="bg-white">Selanjutnya</Button>
+        <span className="text-center w-full md:w-auto">Total {processedTransactions.length} transaksi ditemukan</span>
+        <div className="flex gap-2 w-full md:w-auto justify-between md:justify-end">
+          <Button variant="outline" size="sm" disabled className="bg-white w-full md:w-auto">Sebelumnya</Button>
+          <Button variant="outline" size="sm" className="bg-white w-full md:w-auto">Selanjutnya</Button>
         </div>
       </div>
     </Card>

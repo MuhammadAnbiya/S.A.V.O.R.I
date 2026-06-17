@@ -26,7 +26,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#faf9f5' }}>
+    <div className="flex h-[100dvh] overflow-hidden" style={{ backgroundColor: '#faf9f5' }}>
       {/* ── Dark Sidebar ────────────────────────────────────── */}
       <aside
         className="hidden md:flex flex-col flex-shrink-0 transition-all duration-300"
@@ -215,12 +215,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Page */}
         <main
-          className="flex-1 overflow-y-auto"
-          style={{ padding: '1.5rem 1.5rem 6rem' }}
+          className="flex-1 overflow-y-auto p-4 md:p-6 pb-40 md:pb-24"
         >
           {children}
         </main>
       </div>
+
+      {/* ── Mobile Bottom Navigation ──────────────────────────────── */}
+      <nav 
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#181715] border-t border-[rgba(255,255,255,0.06)] px-2 flex justify-around items-center shadow-2xl" 
+        style={{ height: '70px', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        {navItems.map(({ href, label, icon: Icon }) => {
+          const active = pathname.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              className="flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors"
+              style={{ color: active ? '#cc785c' : '#a09d96' }}
+            >
+              <Icon size={20} className={active ? 'drop-shadow-md' : ''} />
+              <span className="text-[10px] font-medium" style={{ fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>{label}</span>
+            </Link>
+          );
+        })}
+      </nav>
 
       {/* Talk to Data floating panel */}
       <TalkToDataPanel />

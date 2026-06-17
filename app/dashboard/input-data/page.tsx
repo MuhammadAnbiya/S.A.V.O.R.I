@@ -17,15 +17,18 @@ export default function InputDataUnifiedPage() {
       </div>
 
       <Tabs defaultValue="scanner" className="w-full">
-        <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3 mb-8 !h-14 !p-1.5 bg-white border border-border !rounded-full shadow-sm">
-          <TabsTrigger value="scanner" className="text-sm md:text-base font-semibold !rounded-full !h-full transition-all duration-200 hover:text-ink hover:bg-surface-soft/40 data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-sm">
-            <Camera className="w-4.5 h-4.5 mr-2" /> Scanner Kamera
+        <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3 mb-8 h-auto min-h-[3.5rem] !p-1.5 bg-white border border-border !rounded-full shadow-sm">
+          <TabsTrigger value="scanner" className="text-xs sm:text-sm md:text-base font-semibold !rounded-full !h-full transition-all duration-200 hover:text-ink hover:bg-surface-soft/40 data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-sm flex items-center justify-center">
+            <Camera className="w-4 h-4 sm:w-4.5 sm:h-4.5 mr-1 sm:mr-2 flex-shrink-0" />
+            <span className="hidden sm:inline">Scanner&nbsp;</span><span>Kamera</span>
           </TabsTrigger>
-          <TabsTrigger value="upload" className="text-sm md:text-base font-semibold !rounded-full !h-full transition-all duration-200 hover:text-ink hover:bg-surface-soft/40 data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-sm">
-            <UploadCloud className="w-4.5 h-4.5 mr-2" /> Upload File
+          <TabsTrigger value="upload" className="text-xs sm:text-sm md:text-base font-semibold !rounded-full !h-full transition-all duration-200 hover:text-ink hover:bg-surface-soft/40 data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-sm flex items-center justify-center">
+            <UploadCloud className="w-4 h-4 sm:w-4.5 sm:h-4.5 mr-1 sm:mr-2 flex-shrink-0" />
+            <span>Upload</span><span className="hidden sm:inline">&nbsp;File</span>
           </TabsTrigger>
-          <TabsTrigger value="manual" className="text-sm md:text-base font-semibold !rounded-full !h-full transition-all duration-200 hover:text-ink hover:bg-surface-soft/40 data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-sm">
-            <Edit3 className="w-4.5 h-4.5 mr-2" /> Input Manual
+          <TabsTrigger value="manual" className="text-xs sm:text-sm md:text-base font-semibold !rounded-full !h-full transition-all duration-200 hover:text-ink hover:bg-surface-soft/40 data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-sm flex items-center justify-center">
+            <Edit3 className="w-4 h-4 sm:w-4.5 sm:h-4.5 mr-1 sm:mr-2 flex-shrink-0" />
+            <span className="hidden sm:inline">Input&nbsp;</span><span>Manual</span>
           </TabsTrigger>
         </TabsList>
 

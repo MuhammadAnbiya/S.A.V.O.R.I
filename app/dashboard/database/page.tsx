@@ -176,9 +176,9 @@ export default function DatabasePage() {
         </Button>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 items-start h-[calc(100vh-180px)]">
+      <div className="flex flex-col lg:flex-row gap-6 items-start h-auto lg:h-[calc(100vh-180px)]">
         {/* Kolom 1: Filter Sidebar (Lebar tetap) */}
-        <div className="w-full lg:w-72 flex-shrink-0 h-full overflow-y-auto">
+        <div className="w-full lg:w-72 flex-shrink-0 h-auto lg:h-full lg:overflow-y-auto mb-4 lg:mb-0">
           <FilterSidebar 
             onApply={setSidebarFilters} 
             onReset={() => setSidebarFilters({})} 
@@ -187,7 +187,7 @@ export default function DatabasePage() {
         </div>
 
         {/* Kolom 2: Transaction Table (Mengisi sisa ruang) */}
-        <div className="flex-1 w-full h-full min-w-0">
+        <div className="flex-1 w-full min-h-[500px] lg:h-full min-w-0">
           <TransactionTable 
             transactions={filteredTransactions} 
             onEdit={handleEdit}
