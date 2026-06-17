@@ -9,8 +9,33 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
 const GROQ_MODEL = 'llama-3.1-8b-instant'; // Sangat cepat: ~0.5s response
 
+interface TransactionItem {
+  name: string;
+  qty: number;
+  price: number;
+  subtotal: number;
+}
+
+interface Transaction {
+  id: string;
+  transaction_date: string;
+  type: string;
+  category: string;
+  amount: number;
+  vendor_name: string | null;
+  branch: string | null;
+  items?: TransactionItem[];
+}
+
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'model' | 'assistant';
+  content: string;
+  timestamp: string;
+}
+
 // ── Format transactions as compact context for the LLM ────────────
-function buildContext(transactions: any[]): string {
+function buildContext(transactions: Transaction[]): string {
   if (!transactions || transactions.length === 0) {
     return 'Tidak ada data transaksi.';
   }
@@ -19,8 +44,8 @@ function buildContext(transactions: any[]): string {
     const date = new Date(t.transaction_date).toLocaleDateString('id-ID', {
       weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
     });
-    const itemList = t.items?.length > 0
-      ? t.items.map((item: any) => `${item.name} (${item.qty}x Rp${item.price})`).join(', ')
+    const itemList = t.items && t.items.length > 0
+      ? t.items.map((item) => `${item.name} (${item.qty}x Rp${item.price})`).join(', ')
       : '-';
     return `- ${date} | Vendor: ${t.vendor_name || '-'} | Kategori: ${t.category || '-'} | Cabang: ${t.branch || '-'} | Total: Rp${t.amount} | Items: [${itemList}]`;
   });
@@ -29,7 +54,7 @@ function buildContext(transactions: any[]): string {
 }
 
 // ── Call Groq API ──────────────────────────────────────────────────
-async function queryGroq(userMessage: string, transactions: any[], history: any[]): Promise<string> {
+async function queryGroq(userMessage: string, transactions: Transaction[], history: ChatMessage[]): Promise<string> {
   const today = new Date().toLocaleDateString('id-ID', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
@@ -52,7 +77,7 @@ INSTRUKSI:
   const messages = [
     { role: 'system', content: systemPrompt },
     // Include up to last 6 messages of conversation history for context
-    ...history.slice(-6).map((m: any) => ({
+    ...history.slice(-6).map((m) => ({
       role: m.role === 'user' ? 'user' : 'assistant',
       content: m.content,
     })),
@@ -104,6 +129,7 @@ export async function POST(request: NextRequest) {
         id, transaction_date, type, category, amount, vendor_name, branch,
         items:transaction_items(name, qty, price, subtotal)
       `)
+      .eq('user_id', session.user.id)
       .is('deleted_at', null)
       .order('transaction_date', { ascending: false })
       .limit(500);
@@ -117,8 +143,9 @@ export async function POST(request: NextRequest) {
       try {
         answer = await queryGroq(userMessage, transactions || [], conversationHistory);
         console.log(`[Talk to Data] Groq LLM responded successfully`);
-      } catch (groqErr: any) {
-        console.warn('[Talk to Data] Groq failed, falling back to Smart Query Engine:', groqErr.message);
+      } catch (groqErr) {
+        const message = groqErr instanceof Error ? groqErr.message : String(groqErr);
+        console.warn('[Talk to Data] Groq failed, falling back to Smart Query Engine:', message);
         // Fallback to rule-based engine
         answer = processQuery(userMessage, transactions || []);
       }
@@ -136,8 +163,9 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
 
-  } catch (error: any) {
-    console.error('Talk to Data error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Talk to Data error:', message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
