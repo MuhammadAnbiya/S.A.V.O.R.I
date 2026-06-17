@@ -8,6 +8,10 @@ const QWEN_MODEL = process.env.QWEN_MODEL_NAME || 'Qwen/Qwen2.5-VL-72B-Instruct'
 const openai = new OpenAI({
   apiKey: QWEN_API_KEY,
   baseURL: QWEN_BASE_URL,
+  defaultHeaders: {
+    "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    "X-Title": "SAVORI",
+  }
 });
 
 /**
