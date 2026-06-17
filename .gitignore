@@ -35,3 +35,4 @@ venv/
 database.sqlite
 test_gemini.mjs
 app/api/test-db/
+tsconfig.tsbuildinfo

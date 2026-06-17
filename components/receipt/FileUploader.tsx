@@ -141,7 +141,7 @@ export default function FileUploader() {
 
       {!selectedFile ? (
         <div 
-          className={`border-2 border-dashed rounded-lg p-12 text-center ${dragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+          className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-all duration-200 ${dragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30 hover:bg-surface-soft/25'}`}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
