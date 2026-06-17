@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
-const GROQ_MODEL = 'llama-3.1-8b-instant';
+const GROQ_MODEL = 'llama-3.3-70b-versatile'; // Gunakan model 70B yang jauh lebih pintar
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,17 +28,19 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    const systemPrompt = `Kamu adalah mesin parser struk belanja Indonesia. Tugasmu mengubah teks OCR menjadi JSON terstruktur.
+    const systemPrompt = `Kamu adalah mesin parser struk belanja Indonesia yang sangat teliti. Tugasmu mengubah teks OCR menjadi JSON terstruktur.
 
 ATURAN KETAT — ikuti tanpa pengecualian:
 1. Output HANYA JSON valid, tanpa teks lain.
 2. Semua angka harus integer (tanpa desimal, tanpa titik pemisah ribuan, tanpa "Rp").
-3. subtotal setiap item HARUS = quantity × unit_price. Jika di struk tertulis "20.000 x 1 = 20.000", maka unit_price=20000, quantity=1, subtotal=20000.
-4. total_amount HARUS = jumlah seluruh subtotal item.
-5. transaction_date dalam format YYYY-MM-DD. Jika di struk tertulis "23-05-2026", hasilnya "2026-05-23".
-6. Perbaiki typo dari OCR (misal "Ayan" → "Ayam", "Uncattos" → kemungkinan nama toko asli jika bisa ditebak).
-7. Abaikan baris yang bukan item belanja (No, Date, Kasir, Nama, Bayar, Kembali, Terima Kasih, alamat, nomor telepon, footer).
-8. Jika ada baris nama item TANPA harga, dan baris berikutnya ada format "harga x qty = subtotal", pasangkan mereka sebagai satu item.
+3. Hati-hati menentukan Quantity vs Harga. Quantity umumnya kecil (1-50). Jika tertulis "20.000 x 1", maka unit_price=20000, quantity=1.
+4. subtotal setiap item HARUS BENAR SECARA MATEMATIS = quantity × unit_price. 
+5. PENANGANAN DISKON: Jika ada diskon untuk seluruh transaksi, masukkan sebagai 1 item baru bernama "Diskon" atau "Potongan Harga" dengan quantity=1 dan unit_price bernilai NEGATIF (misal -5000), sehingga subtotalnya juga negatif (-5000).
+6. total_amount HARUS = jumlah seluruh subtotal item (termasuk item diskon yang negatif).
+7. transaction_date dalam format YYYY-MM-DD. Jika di struk tertulis "23-05-2026", hasilnya "2026-05-23".
+8. Perbaiki typo dari OCR (misal "Ayan" → "Ayam", "Uncattos" → nama toko asli jika bisa ditebak).
+9. Abaikan teks sampah (No, Date, Kasir, Nama, Bayar, Kembali, Terima Kasih, alamat, nomor telepon).
+10. Jika ada baris nama item TANPA harga, dan baris berikutnya berisi "harga x qty = subtotal", gabungkan mereka sebagai satu item.
 
 Schema JSON:
 {

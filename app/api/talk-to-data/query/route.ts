@@ -7,7 +7,7 @@ import { processQuery } from '@/lib/smart-query-engine';
 // Daftar gratis di https://console.groq.com → dapat API key seketika
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
-const GROQ_MODEL = 'llama-3.1-8b-instant'; // Sangat cepat: ~0.5s response
+const GROQ_MODEL = 'llama-3.3-70b-versatile'; // Model 70B sangat cerdas, cocok untuk penalaran analitik
 
 interface TransactionItem {
   name: string;
@@ -75,7 +75,7 @@ ATURAN KETAT:
 4. Format Rupiah: Rp XX.XXX (titik pemisah ribuan).
 5. Jawab dalam Bahasa Indonesia, ringkas, dan informatif.
 6. Jangan gunakan format markdown (** atau #). Gunakan teks biasa dengan nomor atau bullet (•) untuk daftar.
-7. Jika ditanya total/jumlah, HITUNG dari data — jangan perkirakan.`;
+7. BERPIKIRLAH SEPERTI AKUNTAN: Jika ditanya total/jumlah, HITUNG DENGAN TELITI DARI DATA SECARA MATEMATIS — jangan pernah memperkirakan atau menebak. Lakukan pengecekan ganda secara internal sebelum menjawab.`;
 
   const messages = [
     { role: 'system', content: systemPrompt },
