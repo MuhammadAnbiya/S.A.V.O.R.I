@@ -87,7 +87,8 @@ export default function FileUploader() {
             const canvas = document.createElement('canvas');
             let width = img.width;
             let height = img.height;
-            const MAX_DIMENSION = 1024; // Sweet spot: fast processing, sharp text
+            // Turunkan dimensi ke 800px untuk memotong jumlah token hingga 50% lebih banyak
+            const MAX_DIMENSION = 800; 
             
             if (width > height && width > MAX_DIMENSION) {
               height = Math.round(height * (MAX_DIMENSION / width));
@@ -106,8 +107,8 @@ export default function FileUploader() {
             }
             ctx.drawImage(img, 0, 0, width, height);
             
-            // Compress to JPEG with 80% quality
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            // Compress to JPEG with 60% quality (VLM masih bisa baca dengan baik tapi ukuran file drop drastis)
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
             finalMimeType = 'image/jpeg';
             resolve(dataUrl.split(',')[1]);
           };
