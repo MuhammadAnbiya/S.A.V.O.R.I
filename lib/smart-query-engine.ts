@@ -109,7 +109,7 @@ function getTimeRange(question: string): { start: Date; end: Date; label: string
 
 function extractSearchKeyword(question: string): string | null {
   // Remove common question words, time markers etc.
-  let clean = question.toLowerCase()
+  const clean = question.toLowerCase()
     .replace(/berapa\s*(kali|banyak|sering|total|jumlah|harga|biaya|rp)?/gi, '')
     .replace(/kapan\s*(saja|aja)?/gi, '')
     .replace(/dimana\s*(saja|aja)?|di\s*mana/gi, '')
@@ -179,11 +179,11 @@ export function processQuery(question: string, transactions: Transaction[]): str
 
   // 3. Parse time range
   const timeRange = getTimeRange(question);
-  let filtered = filterByTimeRange(transactions, timeRange);
+  const filtered = filterByTimeRange(transactions, timeRange);
 
   // 4. Extract keyword and filter
   const keyword = extractSearchKeyword(question);
-  let keywordFiltered = keyword ? filterByKeyword(filtered, keyword) : filtered;
+  const keywordFiltered = keyword ? filterByKeyword(filtered, keyword) : filtered;
 
   // ── Category question ──
   if (CATEGORY_PATTERNS.test(question)) {

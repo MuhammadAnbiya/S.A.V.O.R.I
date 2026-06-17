@@ -127,7 +127,7 @@ function parseLineItems(lines: string[]): ReceiptItem[] {
     }
 
     // Extract item name from the current line (everything before the price and qty)
-    let inlineName = line
+    const inlineName = line
       .replace(/(\d[\d.,]*\d|\d)\s*$/, '')      // remove trailing price
       .replace(/(\d+)\s*[xX×*]\s/, '')            // remove qty prefix
       .replace(/[Rr][Pp]\.?\s*/g, '')             // remove Rp
@@ -185,77 +185,117 @@ function extractVendorName(lines: string[]): string {
   return 'Tidak Teridentifikasi';
 }
 
-// ── Main OCR Function ──────────────────────────────────────────
+// ── Extract Text via Tesseract (Client Side) ────────────────────
+
+export async function performOCR(imageBase64: string, mimeType: string): Promise<{ text: string; confidence: number }> {
+  const Tesseract = (await import('tesseract.js')).default;
+  const imageSrc = `data:${mimeType};base64,${imageBase64}`;
+
+  const { data } = await Tesseract.recognize(imageSrc, 'ind+eng', {
+    logger: m => console.log('OCR Progress:', m.status, Math.round(m.progress * 100) + '%')
+  });
+
+  return {
+    text: data.text || '',
+    confidence: (data.confidence || 50) / 100
+  };
+}
+
+// ── Local Regex Parser ──────────────────────────────────────────
+
+export function parseTextRegex(fullText: string, ocrConfidence: number): ReceiptResult {
+  const lines = fullText.split('\n').filter((l: string) => l.trim().length > 0);
+
+  if (lines.length === 0) {
+    return createEmptyResult('Tidak dapat membaca teks dari gambar. Pastikan gambar struk jelas dan tidak buram.');
+  }
+
+  // Extract vendor name from top lines
+  const vendorName = extractVendorName(lines);
+
+  // Extract date
+  let transactionDate: string | null = null;
+  for (const line of lines) {
+    transactionDate = parseDate(line);
+    if (transactionDate) break;
+  }
+  if (!transactionDate) {
+    transactionDate = new Date().toISOString().split('T')[0]; // Default today
+  }
+
+  // Extract items
+  const items = parseLineItems(lines);
+
+  // Extract total — look for "TOTAL" line
+  let totalAmount = 0;
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i].trim();
+    if (/^(grand\s*)?total/i.test(line) || /^total\s*(belanja|bayar|akhir)?/i.test(line)) {
+      const priceMatch = line.match(/(\d[\d.,]*\d)/g);
+      if (priceMatch) {
+        totalAmount = parsePrice(priceMatch[priceMatch.length - 1]);
+      }
+      break;
+    }
+  }
+
+  // If no total found, sum items
+  if (totalAmount === 0 && items.length > 0) {
+    totalAmount = items.reduce((sum, item) => sum + item.subtotal.value, 0);
+  }
+
+  return {
+    vendor_name: { value: vendorName, confidence: ocrConfidence * 0.7 },
+    transaction_date: { value: transactionDate, confidence: ocrConfidence * 0.8 },
+    items: items.length > 0 ? items : [{
+      name: { value: 'Item tidak teridentifikasi', confidence: 0.3 },
+      quantity: { value: 1, confidence: 0.3 },
+      unit: { value: 'pcs', confidence: 0.3 },
+      unit_price: { value: totalAmount, confidence: 0.3 },
+      subtotal: { value: totalAmount, confidence: 0.3 },
+    }],
+    total_amount: { value: totalAmount, confidence: ocrConfidence * 0.7 },
+  };
+}
+
+// ── Main Entry Point with API Fallback ──────────────────────────
 
 export async function extractReceiptWithOCR(imageBase64: string, mimeType: string): Promise<ReceiptResult> {
   try {
-    // Dynamic import to prevent SSR Webpack node worker errors
-    const Tesseract = (await import('tesseract.js')).default;
-
-    // Di browser, Tesseract bisa langsung memproses format Data URL
-    const imageSrc = `data:${mimeType};base64,${imageBase64}`;
-
-    // Run OCR with Indonesian + English language
-    const { data } = await Tesseract.recognize(imageSrc, 'ind+eng', {
-      logger: m => console.log('OCR Progress:', m.status, Math.round(m.progress * 100) + '%')
-    });
-
-    const ocrConfidence = (data.confidence || 50) / 100;
-    const fullText = data.text || '';
-    const lines = fullText.split('\n').filter((l: string) => l.trim().length > 0);
-
-    if (lines.length === 0) {
-      return createEmptyResult('Tidak dapat membaca teks dari gambar. Pastikan gambar struk jelas dan tidak buram.');
+    // 1. Run Client-side OCR to extract raw text
+    const { text, confidence } = await performOCR(imageBase64, mimeType);
+    
+    if (!text.trim()) {
+      return createEmptyResult('Tidak ada teks yang terdeteksi pada gambar struk.');
     }
 
-    // Extract vendor name from top lines
-    const vendorName = extractVendorName(lines);
+    // 2. Try to send raw text to our Server/Groq parser API
+    try {
+      const response = await fetch('/api/scanner/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rawText: text })
+      });
 
-    // Extract date
-    let transactionDate: string | null = null;
-    for (const line of lines) {
-      transactionDate = parseDate(line);
-      if (transactionDate) break;
-    }
-    if (!transactionDate) {
-      transactionDate = new Date().toISOString().split('T')[0]; // Default today
-    }
-
-    // Extract items
-    const items = parseLineItems(lines);
-
-    // Extract total — look for "TOTAL" line
-    let totalAmount = 0;
-    for (let i = lines.length - 1; i >= 0; i--) {
-      const line = lines[i].trim();
-      if (/^(grand\s*)?total/i.test(line) || /^total\s*(belanja|bayar|akhir)?/i.test(line)) {
-        const priceMatch = line.match(/(\d[\d.,]*\d)/g);
-        if (priceMatch) {
-          totalAmount = parsePrice(priceMatch[priceMatch.length - 1]);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.status === 'success' && result.data) {
+          console.log('[Receipt Scanner] Successfully parsed via Groq LLM API');
+          return result.data;
         }
-        break;
       }
+      console.warn('[Receipt Scanner] API call not successful, falling back to local regex parser');
+    } catch (apiErr) {
+      const message = apiErr instanceof Error ? apiErr.message : String(apiErr);
+      console.warn('[Receipt Scanner] Remote parser failed, falling back to local regex:', message);
     }
 
-    // If no total found, sum items
-    if (totalAmount === 0 && items.length > 0) {
-      totalAmount = items.reduce((sum, item) => sum + item.subtotal.value, 0);
-    }
+    // 3. Fallback to local regex parser
+    return parseTextRegex(text, confidence);
 
-    return {
-      vendor_name: { value: vendorName, confidence: ocrConfidence * 0.7 },
-      transaction_date: { value: transactionDate, confidence: ocrConfidence * 0.8 },
-      items: items.length > 0 ? items : [{
-        name: { value: 'Item tidak teridentifikasi', confidence: 0.3 },
-        quantity: { value: 1, confidence: 0.3 },
-        unit: { value: 'pcs', confidence: 0.3 },
-        unit_price: { value: totalAmount, confidence: 0.3 },
-        subtotal: { value: totalAmount, confidence: 0.3 },
-      }],
-      total_amount: { value: totalAmount, confidence: ocrConfidence * 0.7 },
-    };
-  } catch (error: any) {
-    console.error('OCR extraction error:', error.message || error);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('OCR main thread error:', message);
     return createEmptyResult('Gagal memproses gambar. Coba foto ulang dengan pencahayaan yang lebih baik.');
   }
 }

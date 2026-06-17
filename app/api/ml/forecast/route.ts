@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const { exec } = require('child_process');
     const path = require('path');
     
-    return new Promise((resolve) => {
+    return new Promise<Response>((resolve) => {
       const inputPayload = JSON.stringify({
         days,
         base_sales: baseAmount
