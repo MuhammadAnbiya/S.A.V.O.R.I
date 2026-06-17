@@ -1,19 +1,5 @@
 import OpenAI from 'openai';
 
-const QWEN_API_KEY = process.env.QWEN_API_KEY || '';
-// Default menggunakan endpoint OpenAI-compatible (misal: Together AI, SiliconFlow, atau Ollama Lokal)
-const QWEN_BASE_URL = process.env.QWEN_BASE_URL || 'https://api.together.xyz/v1'; 
-const QWEN_MODEL = process.env.QWEN_MODEL_NAME || 'Qwen/Qwen2.5-VL-72B-Instruct';
-
-const openai = new OpenAI({
-  apiKey: QWEN_API_KEY,
-  baseURL: QWEN_BASE_URL,
-  defaultHeaders: {
-    "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-    "X-Title": "SAVORI",
-  }
-});
-
 /**
  * Extracts information from a receipt image using Qwen 2.5 VL
  * @param imageBase64 Base64 encoded image string (tanpa prefix data:image)
@@ -21,6 +7,19 @@ const openai = new OpenAI({
  * @returns Promise with the parsed JSON
  */
 export async function extractReceiptDataQwen(imageBase64: string, mimeType: string) {
+  const QWEN_API_KEY = process.env.QWEN_API_KEY || '';
+  const QWEN_BASE_URL = process.env.QWEN_BASE_URL || 'https://api.together.xyz/v1'; 
+  const QWEN_MODEL = process.env.QWEN_MODEL_NAME || 'Qwen/Qwen2.5-VL-72B-Instruct';
+
+  const openai = new OpenAI({
+    apiKey: QWEN_API_KEY,
+    baseURL: QWEN_BASE_URL,
+    defaultHeaders: {
+      "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+      "X-Title": "SAVORI",
+    }
+  });
+
   const prompt = `[SYSTEM INSTRUCTION - CRITICAL]
 You are an expert data extraction system specialized in Indonesian receipts. Your ONLY objective is to parse receipt/invoice data from the image and return a strictly formatted JSON.
 
