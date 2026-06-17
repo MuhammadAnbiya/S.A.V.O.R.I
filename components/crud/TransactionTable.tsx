@@ -165,6 +165,7 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
                     <span className="px-2 py-1 rounded-full text-xs font-medium bg-surface-soft text-text-secondary border border-border">
                       {trx.source || 'Manual'}
                     </span>
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-center space-x-1">
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-text-secondary hover:text-primary" onClick={() => toggleExpand(trx.id)}>
