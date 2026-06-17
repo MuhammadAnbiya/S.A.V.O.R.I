@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-export const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+export const geminiModel = genAI.getGenerativeModel({ model: "gemini-3.1-pro-preview" });
 
 /**
  * Extracts information from a receipt image using Gemini
@@ -62,21 +62,7 @@ Extract all information from this receipt/invoice image and return ONLY valid JS
     const cleaned = text.replace(/```json\n?|```/g, '').trim();
     return JSON.parse(cleaned);
   } catch (error: any) {
-    console.error('Gemini extraction error (Falling back to mock data):', error.message || error);
-    // Fallback mock data as per user rules
-    return {
-      vendor_name: { value: "Mock Vendor (API Error)", confidence: 0.5 },
-      transaction_date: { value: new Date().toISOString().split('T')[0], confidence: 0.5 },
-      items: [
-        {
-          name: { value: "Item 1 (Mock)", confidence: 0.5 },
-          quantity: { value: 1, confidence: 0.5 },
-          unit: { value: "pcs", confidence: 0.5 },
-          unit_price: { value: 15000, confidence: 0.5 },
-          subtotal: { value: 15000, confidence: 0.5 }
-        }
-      ],
-      total_amount: { value: 15000, confidence: 0.5 }
-    };
+    console.error('Gemini extraction error:', error.message || error);
+    throw new Error(error.message || 'Gagal menghubungi server AI');
   }
 }

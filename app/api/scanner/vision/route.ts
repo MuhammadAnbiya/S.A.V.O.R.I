@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       status: 'success',
       data: sanitizedData,
       metadata: {
-        engine: 'gemini-1.5-pro',
+        engine: 'gemini-3.1-pro-preview',
         timestamp: new Date().toISOString()
       }
     });
