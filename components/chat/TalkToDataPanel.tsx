@@ -97,18 +97,18 @@ export default function TalkToDataPanel() {
   return (
     <>
       {/* ── Floating Action Button ─────────────────────────── */}
-      <button
-        onClick={() => setIsOpen(v => !v)}
-        aria-label="Talk to Data"
-        className="fixed z-50 flex items-center justify-center w-[52px] h-[52px] rounded-full border-none shadow-[0_4px_20px_rgba(204,120,92,0.45)] cursor-pointer transition-all duration-150 right-6 bottom-[calc(env(safe-area-inset-bottom)+90px)] md:bottom-6"
-        style={{ backgroundColor: '#cc785c', color: '#ffffff' }}
-        onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#a9583e')}
-        onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#cc785c')}
-      >
-        {isOpen
-          ? <X size={20} />
-          : <Sparkles size={20} />}
-      </button>
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          aria-label="Talk to Data"
+          className="fixed z-50 flex items-center justify-center w-[52px] h-[52px] rounded-full border-none shadow-[0_4px_20px_rgba(204,120,92,0.45)] cursor-pointer transition-all duration-150 right-6 bottom-[calc(env(safe-area-inset-bottom)+90px)] md:bottom-6"
+          style={{ backgroundColor: '#cc785c', color: '#wffffff' }}
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#a9583e')}
+          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#cc785c')}
+        >
+          <Sparkles size={20} />
+        </button>
+      )}
 
       {/* ── Side Panel ────────────────────────────────────── */}
       {isOpen && (

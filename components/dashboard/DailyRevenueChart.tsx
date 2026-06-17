@@ -62,7 +62,7 @@ export default function DailyRevenueChart() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-[300px] flex flex-col justify-center">
         {isLoading ? (
           <div className="w-full h-full animate-pulse bg-main rounded-md"></div>
         ) : (

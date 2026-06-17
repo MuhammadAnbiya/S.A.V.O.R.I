@@ -106,19 +106,17 @@ export default function CameraScanner() {
     setErrorMessage(null);
 
     try {
-      const response = await fetch('/api/scanner/extract', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_base64: imageBase64, mime_type: 'image/jpeg' }),
-      });
+      // Import secara dinamis agar Tesseract hanya diload di sisi client saat dibutuhkan
+      const { extractReceiptWithOCR } = await import('@/lib/receipt-ocr');
+      
+      const result = await extractReceiptWithOCR(imageBase64, 'image/jpeg');
 
-      const result = await response.json();
-
-      if (!response.ok || result.status === 'error') {
-        throw new Error(result.error?.message || 'Gagal mengekstrak data dari struk.');
+      // Validasi hasil
+      if (!result || result.vendor_name.value === 'Tidak Teridentifikasi' && result.items.length === 1 && result.total_amount.value === 0) {
+        throw new Error('Gambar tidak terbaca dengan baik. Coba foto ulang dengan teks yang lebih jelas.');
       }
 
-      setExtractionResult(result.data);
+      setExtractionResult(result);
     } catch (err: any) {
       setErrorMessage(err.message || 'Terjadi kesalahan saat memproses gambar. Coba scan ulang.');
       setCameraState('idle');

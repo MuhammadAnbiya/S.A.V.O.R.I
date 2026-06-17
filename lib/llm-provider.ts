@@ -1,22 +1,7 @@
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Konfigurasi ini menunjuk ke server lokal (misalnya vLLM, Ollama, atau FastAPI)
-// Secara default mengarah ke endpoint lokal port 11434 (port default Ollama)
-export const openai = new OpenAI({
-  baseURL: process.env.LOCAL_LLM_BASE_URL || 'http://localhost:11434/v1',
-  apiKey: process.env.LOCAL_LLM_API_KEY || 'ollama', // ollama/vllm lokal biasanya tidak memvalidasi api key
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-// Model yang direkomendasikan untuk Vision (Ekstraksi Struk OCR)
-export const VISION_MODEL = process.env.VISION_MODEL || 'llama3.2-vision'; // atau 'llava'
-
-// Model yang direkomendasikan untuk Analitik & Chat (Talk to Data)
-export const CHAT_MODEL = process.env.CHAT_MODEL || 'llama3.2:1b'; // Anda sudah mengunduh ini
-
-/**
- * Ekstraksi informasi dari gambar struk menggunakan Local Vision LLM
- * Menggantikan Gemini API
- */
 export async function extractReceiptDataLocal(imageBase64: string, mimeType: string) {
   const prompt = `[SYSTEM INSTRUCTION - CRITICAL]
 You are an isolated data extraction system. Your ONLY objective is to parse receipt/invoice data and return a strictly formatted JSON.
@@ -47,34 +32,45 @@ For Indonesian receipts, handle formats like: Rp 15.000, 15,000, 15000.
 For dates, try to infer the year if not present (likely current year).`;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: VISION_MODEL,
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: prompt },
-            {
-              type: "image_url",
-              image_url: {
-                // OpenAI API format untuk Base64 image
-                url: `data:${mimeType};base64,${imageBase64}`,
-              },
-            },
-          ],
-        },
-      ],
-      // Memaksa JSON jika model mendukung JSON mode
-      response_format: { type: "json_object" }, 
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          data: imageBase64,
+          mimeType: mimeType
+        }
+      }
+    ]);
 
-    const cleanJson = response.choices[0].message.content?.replace(/```json\n?|```/g, '').trim() || '{}';
+    const response = await result.response;
+    const text = response.text();
+    const cleanJson = text.replace(/```json\n?|```/g, '').trim();
     return JSON.parse(cleanJson);
   } catch (error: any) {
-    console.error('Local LLM extraction error (Falling back to mock data):', error.message || error);
-    // Fallback mock data jika server lokal mati / belum siap
+    console.error('Gemini extraction error:', error.message || error);
+    
+    // Fallback khusus jika API Key salah
+    if (error.message && error.message.includes('404')) {
+      return {
+        vendor_name: { value: "ERROR: KUNCI API SALAH!", confidence: 0.0 },
+        transaction_date: { value: "Buka .env.local", confidence: 0.0 },
+        items: [
+          {
+            name: { value: "Kunci API Gemini Anda Tidak Valid (Harus berawalan AIzaSy...)", confidence: 0.0 },
+            quantity: { value: 0, confidence: 0.0 },
+            unit: { value: "error", confidence: 0.0 },
+            unit_price: { value: 0, confidence: 0.0 },
+            subtotal: { value: 0, confidence: 0.0 }
+          }
+        ],
+        total_amount: { value: 0, confidence: 0.0 }
+      };
+    }
+
+    // Fallback mock data umum
     return {
-      vendor_name: { value: "Mock Vendor (Local LLM Error)", confidence: 0.5 },
+      vendor_name: { value: "Mock Vendor (Gemini Error)", confidence: 0.5 },
       transaction_date: { value: new Date().toISOString().split('T')[0], confidence: 0.5 },
       items: [
         {

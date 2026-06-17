@@ -92,22 +92,15 @@ export default function FileUploader() {
       reader.readAsDataURL(selectedFile);
       const imageBase64 = await base64Promise;
 
-      const response = await fetch('/api/scanner/extract', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image_base64: imageBase64,
-          mime_type: selectedFile.type
-        })
-      });
+      const { extractReceiptWithOCR } = await import('@/lib/receipt-ocr');
+      const result = await extractReceiptWithOCR(imageBase64, selectedFile.type);
 
-      const result = await response.json();
-
-      if (!response.ok || result.status === 'error') {
-        throw new Error(result.error?.message || 'Gagal mengekstrak data');
+      // Validasi hasil
+      if (!result || result.vendor_name.value === 'Tidak Teridentifikasi' && result.items.length === 1 && result.total_amount.value === 0) {
+        throw new Error('Teks pada dokumen tidak terbaca dengan baik. Pastikan kualitas gambar bagus.');
       }
 
-      setExtractionResult(result.data);
+      setExtractionResult(result);
     } catch (err: any) {
       console.error('Extraction error:', err);
       setError(err.message || 'Terjadi kesalahan saat memproses file.');

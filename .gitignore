@@ -34,7 +34,7 @@ services/forecasting/venv/
 __pycache__/
 
 # Large models
-# *.pkl (Uncomment if your model becomes too large for GitHub)
+# *.pkl (Uncomment if your model becomes too large for GitHub)`
 
 # Next.js / TypeScript build info
 tsconfig.tsbuildinfo

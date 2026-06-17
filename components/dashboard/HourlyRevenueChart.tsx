@@ -46,7 +46,7 @@ export default function HourlyRevenueChart() {
         </select>
       </div>
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-[300px] flex flex-col justify-center">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 0, right: 20, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E2E8F0" />
