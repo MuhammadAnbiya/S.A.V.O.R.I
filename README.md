@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://via.placeholder.com/1200x400/181715/cc785c?text=S.+A.+V.+O.+R.+I" alt="S.A.V.O.R.I Banner" width="100%" />
+  <img src="public/banner.jpg" alt="S.A.V.O.R.I Banner" width="100%" />
 
   <br />
   <br />
