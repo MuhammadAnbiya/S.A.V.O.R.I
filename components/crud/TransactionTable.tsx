@@ -134,8 +134,8 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
               <th className="px-4 py-3 font-medium">Kategori</th>
               <th className="px-4 py-3 font-medium">Metode</th>
               <th className="px-4 py-3 font-medium">Sumber</th>
-              <th className="px-4 py-3 font-medium text-center">Aksi</th>
               <th className="px-4 py-3 font-medium text-right">Total (Rp)</th>
+              <th className="px-4 py-3 font-medium text-center">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -169,6 +169,9 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
                       {trx.source || 'Manual'}
                     </span>
                   </td>
+                  <td className="px-4 py-3 text-right font-bold">
+                    {trx.amount.toLocaleString('id-ID')}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-center space-x-1">
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-text-secondary hover:text-primary" onClick={() => toggleExpand(trx.id)}>
@@ -181,9 +184,6 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-right font-bold">
-                    {trx.amount.toLocaleString('id-ID')}
                   </td>
                 </tr>
                 
