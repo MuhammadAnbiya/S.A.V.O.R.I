@@ -59,24 +59,26 @@ async function queryGroq(userMessage: string, transactions: Transaction[], histo
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
 
-  const systemPrompt = `Kamu adalah asisten analis bisnis S.A.V.O.R.I yang sangat cerdas dan membantu.
-Hari ini adalah ${today}.
+  const todayISO = new Date().toISOString().split('T')[0]; // e.g. "2026-06-18"
 
-Data transaksi user (format: tanggal | vendor | kategori | cabang | total | items):
+  const systemPrompt = `Kamu adalah asisten analis data S.A.V.O.R.I. Jawab pertanyaan user HANYA berdasarkan data transaksi di bawah.
+
+Hari ini: ${today} (${todayISO})
+
+DATA TRANSAKSI:
 ${buildContext(transactions)}
 
-INSTRUKSI:
-- Jawab dengan AKURAT berdasarkan data di atas saja.
-- Jawab dalam Bahasa Indonesia yang natural dan ramah.
-- Gunakan angka Rupiah dengan format "Rp X.XXX" (titik sebagai pemisah ribuan).
-- Jika data tidak ada atau tidak relevan, katakan jujur.
-- Jawaban harus ringkas, jelas, dan informatif. Maksimal 5-6 kalimat atau daftar singkat.
-- Jangan mengarang data yang tidak ada di konteks.
-- Jika ditanya soal waktu (hari ini, minggu ini, bulan ini, dll), pastikan kamu memfilter tanggal dari data dengan benar.`;
+ATURAN KETAT:
+1. Jawab HANYA berdasarkan data di atas. DILARANG KERAS mengarang atau mengasumsikan data yang tidak ada.
+2. Jika tidak ada data yang cocok, katakan "Tidak ada data yang sesuai" — jangan coba menjawab dengan data lain.
+3. Untuk pertanyaan waktu ("minggu ini", "bulan ini"), filter tanggal dari data dengan benar. Minggu ini = Senin s.d. hari ini.
+4. Format Rupiah: Rp XX.XXX (titik pemisah ribuan).
+5. Jawab dalam Bahasa Indonesia, ringkas, dan informatif.
+6. Jangan gunakan format markdown (** atau #). Gunakan teks biasa dengan nomor atau bullet (•) untuk daftar.
+7. Jika ditanya total/jumlah, HITUNG dari data — jangan perkirakan.`;
 
   const messages = [
     { role: 'system', content: systemPrompt },
-    // Include up to last 6 messages of conversation history for context
     ...history.slice(-6).map((m) => ({
       role: m.role === 'user' ? 'user' : 'assistant',
       content: m.content,
@@ -93,8 +95,8 @@ INSTRUKSI:
     body: JSON.stringify({
       model: GROQ_MODEL,
       messages,
-      max_tokens: 512,
-      temperature: 0.2, // Low temperature for factual accuracy
+      max_tokens: 600,
+      temperature: 0.1, // Near-zero for factual accuracy
     }),
   });
 

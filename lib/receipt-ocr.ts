@@ -53,14 +53,37 @@ function parsePrice(text: string): number {
 // ── Date Parsing ──────────────────────────────────────────
 
 function parseDate(text: string): string | null {
-  // DD/MM/YYYY or DD-MM-YYYY
+  // DD/MM/YYYY or DD-MM-YYYY (Indonesian standard: day first)
   const match1 = text.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
   if (match1) {
-    const day = match1[1].padStart(2, '0');
-    const month = match1[2].padStart(2, '0');
+    let n1 = parseInt(match1[1], 10);
+    let n2 = parseInt(match1[2], 10);
     let year = match1[3];
     if (year.length === 2) year = '20' + year;
-    return `${year}-${month}-${day}`;
+
+    let day: number, month: number;
+    
+    // Indonesian convention is DD-MM-YYYY
+    if (n1 > 12 && n2 <= 12) {
+      // First number > 12, must be day
+      day = n1; month = n2;
+    } else if (n2 > 12 && n1 <= 12) {
+      // Second number > 12, must be day (MM-DD format)
+      day = n2; month = n1;
+    } else {
+      // Both <= 12, assume Indonesian DD-MM
+      day = n1; month = n2;
+    }
+    
+    // Validate ranges
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      // Final validation: check if it's a real date
+      const parsed = new Date(dateStr + 'T00:00:00Z');
+      if (!isNaN(parsed.getTime())) {
+        return dateStr;
+      }
+    }
   }
 
   // Indonesian month names: 17 Juni 2026

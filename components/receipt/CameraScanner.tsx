@@ -111,8 +111,8 @@ export default function CameraScanner() {
       
       const result = await extractReceiptWithOCR(imageBase64, 'image/jpeg');
 
-      // Validasi hasil
-      if (!result || result.vendor_name.value === 'Tidak Teridentifikasi' && result.items.length === 1 && result.total_amount.value === 0) {
+      // Validate result — confidence === 0 means total OCR failure
+      if (!result || (result.vendor_name.confidence === 0 && result.total_amount.confidence === 0)) {
         throw new Error('Gambar tidak terbaca dengan baik. Coba foto ulang dengan teks yang lebih jelas.');
       }
 

@@ -95,8 +95,8 @@ export default function FileUploader() {
       const { extractReceiptWithOCR } = await import('@/lib/receipt-ocr');
       const result = await extractReceiptWithOCR(imageBase64, selectedFile.type);
 
-      // Validasi hasil
-      if (!result || result.vendor_name.value === 'Tidak Teridentifikasi' && result.items.length === 1 && result.total_amount.value === 0) {
+      // Validate result — confidence === 0 means total OCR failure
+      if (!result || (result.vendor_name.confidence === 0 && result.total_amount.confidence === 0)) {
         throw new Error('Teks pada dokumen tidak terbaca dengan baik. Pastikan kualitas gambar bagus.');
       }
 

@@ -97,23 +97,33 @@ export default function ExtractionResult({ initialData, onCancel, source = 'Scan
     setIsSubmitting(true);
     
     try {
+      // Recalculate all values at submit time to guarantee 100% arithmetic consistency
+      const finalItems = data.items.map((item: any) => {
+        const qty = Math.max(1, Math.round(Number(item.quantity) || 1));
+        const price = Math.max(0, Math.round(Number(item.unit_price) || 0));
+        const subtotal = qty * price; // ALWAYS enforce arithmetic
+        return {
+          name: String(item.name || '').trim(),
+          qty,
+          unit: item.unit || 'pcs',
+          price,
+          subtotal,
+          confidence: item.confidence
+        };
+      }).filter((item: any) => item.name.length > 0);
+
+      const finalTotal = finalItems.reduce((sum: number, item: any) => sum + item.subtotal, 0);
+
       const payload = {
-        vendor_name: data.vendor_name,
+        vendor_name: data.vendor_name.trim(),
         transaction_date: data.transaction_date,
-        amount: data.total_amount,
-        type: 'Pengeluaran', // Default type for receipts
+        amount: finalTotal,
+        type: 'Pengeluaran',
         category: data.category,
         branch: data.branch,
         status: 'Verified',
         source: source,
-        items: data.items.map((item: any) => ({
-          name: item.name,
-          qty: Number(item.quantity) || 1,
-          unit: item.unit || 'pcs',
-          price: Number(item.unit_price) || 0,
-          subtotal: Number(item.subtotal) || 0,
-          confidence: item.confidence
-        }))
+        items: finalItems,
       };
 
       const response = await fetch('/api/transactions', { 

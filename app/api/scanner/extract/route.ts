@@ -24,37 +24,37 @@ export async function POST(request: NextRequest) {
     if (!GROQ_API_KEY) {
       return NextResponse.json({ 
         status: 'error', 
-        error: { message: 'Groq API Key not configured. Please add GROQ_API_KEY to your env.' } 
+        error: { message: 'GROQ_API_KEY not configured' } 
       }, { status: 500 });
     }
 
-    const systemPrompt = `Kamu adalah parser struk belanja (receipt parser) otomatis dalam format JSON.
-Tugasmu adalah menganalisis teks hasil OCR dari struk belanja dan mengekstrak data tersebut menjadi JSON yang valid.
+    const systemPrompt = `Kamu adalah mesin parser struk belanja Indonesia. Tugasmu mengubah teks OCR menjadi JSON terstruktur.
 
-Perbaiki ejaan jika nama toko atau barang terpotong/salah baca akibat OCR (misal "Uncattos" menjadi "Lazatto", "Ayan Dada" menjadi "Ayam Dada").
+ATURAN KETAT — ikuti tanpa pengecualian:
+1. Output HANYA JSON valid, tanpa teks lain.
+2. Semua angka harus integer (tanpa desimal, tanpa titik pemisah ribuan, tanpa "Rp").
+3. subtotal setiap item HARUS = quantity × unit_price. Jika di struk tertulis "20.000 x 1 = 20.000", maka unit_price=20000, quantity=1, subtotal=20000.
+4. total_amount HARUS = jumlah seluruh subtotal item.
+5. transaction_date dalam format YYYY-MM-DD. Jika di struk tertulis "23-05-2026", hasilnya "2026-05-23".
+6. Perbaiki typo dari OCR (misal "Ayan" → "Ayam", "Uncattos" → kemungkinan nama toko asli jika bisa ditebak).
+7. Abaikan baris yang bukan item belanja (No, Date, Kasir, Nama, Bayar, Kembali, Terima Kasih, alamat, nomor telepon, footer).
+8. Jika ada baris nama item TANPA harga, dan baris berikutnya ada format "harga x qty = subtotal", pasangkan mereka sebagai satu item.
 
-Format JSON wajib mengikuti schema ini:
+Schema JSON:
 {
-  "vendor_name": { "value": "Nama Toko/Vendor", "confidence": 0.95 },
-  "transaction_date": { "value": "YYYY-MM-DD", "confidence": 0.95 },
+  "vendor_name": { "value": "string", "confidence": 0.0-1.0 },
+  "transaction_date": { "value": "YYYY-MM-DD", "confidence": 0.0-1.0 },
   "items": [
     {
-      "name": { "value": "Nama Barang", "confidence": 0.9 },
-      "quantity": { "value": 1, "confidence": 0.9 },
-      "unit": { "value": "pcs", "confidence": 0.9 },
-      "unit_price": { "value": 15000, "confidence": 0.9 },
-      "subtotal": { "value": 15000, "confidence": 0.9 }
+      "name": { "value": "string", "confidence": 0.0-1.0 },
+      "quantity": { "value": integer, "confidence": 0.0-1.0 },
+      "unit": { "value": "pcs", "confidence": 0.0-1.0 },
+      "unit_price": { "value": integer, "confidence": 0.0-1.0 },
+      "subtotal": { "value": integer, "confidence": 0.0-1.0 }
     }
   ],
-  "total_amount": { "value": 15000, "confidence": 0.95 }
-}
-
-Aturan Penting:
-1. "transaction_date" harus menggunakan format YYYY-MM-DD (misal: "2026-05-23"). Jika tahun tidak lengkap, asumsikan tahun berjalan atau cari petunjuk di struk.
-2. Semua field angka ("quantity", "unit_price", "subtotal", "total_amount") harus bertipe number (integer), bukan string. Jangan sertakan simbol mata uang atau pemisah ribuan.
-3. HANYA kembalikan JSON yang valid, tanpa teks penjelasan tambahan apapun di luar objek JSON.
-4. "unit" default adalah "pcs".
-5. Jika nama barang tertulis di satu baris dan qty/harga di baris lainnya, pasangkan mereka dengan benar.`;
+  "total_amount": { "value": integer, "confidence": 0.0-1.0 }
+}`;
 
     const response = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
       method: 'POST',
@@ -66,28 +66,34 @@ Aturan Penting:
         model: GROQ_MODEL,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Ini teks OCR dari struk:\n${rawText}` }
+          { role: 'user', content: `Teks OCR struk:\n\n${rawText}` }
         ],
-        temperature: 0.1,
+        temperature: 0.0,
         response_format: { type: "json_object" }
       }),
     });
 
     if (!response.ok) {
+      const errBody = await response.text();
+      console.error('Groq API error body:', errBody);
       throw new Error(`Groq API returned status ${response.status}`);
     }
 
     const resJson = await response.json();
-    const rawContent = resJson.choices[0]?.message?.content || '{}';
-    let parsedData: any;
-    try {
-      parsedData = JSON.parse(rawContent);
-    } catch (parseErr) {
-      console.error('Failed to parse LLM JSON:', rawContent);
-      throw new Error('Format output AI tidak valid');
+    const rawContent = resJson.choices?.[0]?.message?.content;
+    
+    if (!rawContent) {
+      throw new Error('Empty response from Groq');
     }
 
-    // ── Robust Validation & Sanitization Layer ─────────────────────
+    let parsedData: Record<string, unknown>;
+    try {
+      parsedData = JSON.parse(rawContent);
+    } catch {
+      console.error('Failed to parse LLM JSON:', rawContent.substring(0, 500));
+      throw new Error('LLM returned invalid JSON');
+    }
+
     const sanitizedData = sanitizeReceiptData(parsedData);
 
     return NextResponse.json({
@@ -101,101 +107,121 @@ Aturan Penting:
 
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('Error parsing OCR with LLM:', message);
+    console.error('Scanner extract error:', message);
     return NextResponse.json({ status: 'error', error: { message } }, { status: 500 });
   }
 }
 
-// ── Validation and Sanitization Helper ──────────────────────────
-function sanitizeReceiptData(raw: any): any {
+// ── Helpers ─────────────────────────────────────────────────────
+
+interface SanitizedField<T> {
+  value: T;
+  confidence: number;
+}
+
+interface SanitizedItem {
+  name: SanitizedField<string>;
+  quantity: SanitizedField<number>;
+  unit: SanitizedField<string>;
+  unit_price: SanitizedField<number>;
+  subtotal: SanitizedField<number>;
+}
+
+interface SanitizedReceipt {
+  vendor_name: SanitizedField<string>;
+  transaction_date: SanitizedField<string>;
+  items: SanitizedItem[];
+  total_amount: SanitizedField<number>;
+}
+
+function extractVal(obj: unknown, fallback: unknown = ''): unknown {
+  if (obj === null || obj === undefined) return fallback;
+  if (typeof obj === 'object' && 'value' in (obj as Record<string, unknown>)) {
+    return (obj as Record<string, unknown>).value ?? fallback;
+  }
+  return obj;
+}
+
+function extractConf(obj: unknown, fallback = 0.8): number {
+  if (obj !== null && typeof obj === 'object' && 'confidence' in (obj as Record<string, unknown>)) {
+    const c = (obj as Record<string, unknown>).confidence;
+    return typeof c === 'number' && c >= 0 && c <= 1 ? c : fallback;
+  }
+  return fallback;
+}
+
+function sanitizeReceiptData(raw: Record<string, unknown>): SanitizedReceipt {
   const todayStr = new Date().toISOString().split('T')[0];
 
-  // 1. Sanitize Vendor Name
-  const vendorNameObj = raw.vendor_name || {};
-  let vendorName = String(vendorNameObj.value || '').trim();
-  if (!vendorName || vendorName.toLowerCase() === 'tidak teridentifikasi') {
+  // 1. Vendor Name
+  const vendorRaw = raw.vendor_name;
+  let vendorName = String(extractVal(vendorRaw, '')).trim();
+  if (!vendorName || vendorName.length < 2) {
     vendorName = 'Tidak Teridentifikasi';
   }
-  const vendorConfidence = typeof vendorNameObj.confidence === 'number' ? vendorNameObj.confidence : 0.7;
 
-  // 2. Sanitize Transaction Date
-  const dateObj = raw.transaction_date || {};
-  let dateVal = String(dateObj.value || '').trim();
-  // Validate YYYY-MM-DD
-  const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(dateVal);
-  if (!isValidDate) {
-    dateVal = todayStr; // fallback to today
+  // 2. Date — validate YYYY-MM-DD strictly
+  const dateRaw = raw.transaction_date;
+  let dateVal = String(extractVal(dateRaw, '')).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+    dateVal = todayStr;
   }
-  const dateConfidence = typeof dateObj.confidence === 'number' ? dateObj.confidence : 0.8;
+  // Also validate that the date is a real date
+  const parsedDate = new Date(dateVal + 'T00:00:00Z');
+  if (isNaN(parsedDate.getTime())) {
+    dateVal = todayStr;
+  }
 
-  // 3. Sanitize Items
+  // 3. Items
   const rawItems = Array.isArray(raw.items) ? raw.items : [];
-  const sanitizedItems = rawItems
-    .map((item: any, idx: number) => {
-      const nameObj = item.name || {};
-      const name = String(nameObj.value || nameObj || '').trim();
-      if (!name) return null; // Skip empty item names
+  const sanitizedItems: SanitizedItem[] = [];
 
-      const qtyObj = item.quantity || {};
-      const qty = Math.max(1, Number(qtyObj.value !== undefined ? qtyObj.value : (qtyObj || 1)));
+  for (const item of rawItems) {
+    if (!item || typeof item !== 'object') continue;
+    const itemObj = item as Record<string, unknown>;
 
-      const unitObj = item.unit || {};
-      const unit = String(unitObj.value || unitObj || 'pcs').trim() || 'pcs';
+    const name = String(extractVal(itemObj.name, '')).trim();
+    if (!name || name.length < 1) continue;
 
-      const priceObj = item.unit_price || {};
-      const price = Math.max(0, Number(priceObj.value !== undefined ? priceObj.value : (priceObj || 0)));
+    const qty = Math.max(1, Math.round(Number(extractVal(itemObj.quantity, 1)) || 1));
+    const unit = String(extractVal(itemObj.unit, 'pcs')).trim() || 'pcs';
+    const unitPrice = Math.max(0, Math.round(Number(extractVal(itemObj.unit_price, 0)) || 0));
 
-      // Subtotal calculation check
-      const subtotalObj = item.subtotal || {};
-      let subtotal = Math.max(0, Number(subtotalObj.value !== undefined ? subtotalObj.value : (subtotalObj || 0)));
-      
-      // Force correct arithmetic calculation to prevent rounding/calculation errors
-      const calculatedSubtotal = qty * price;
-      if (subtotal === 0 || subtotal !== calculatedSubtotal) {
-        subtotal = calculatedSubtotal;
-      }
+    // CRITICAL: Always force subtotal = qty * unit_price for absolute arithmetic consistency
+    const subtotal = qty * unitPrice;
 
-      return {
-        name: { value: name, confidence: typeof nameObj.confidence === 'number' ? nameObj.confidence : 0.8 },
-        quantity: { value: qty, confidence: typeof qtyObj.confidence === 'number' ? qtyObj.confidence : 0.8 },
-        unit: { value: unit, confidence: typeof unitObj.confidence === 'number' ? unitObj.confidence : 0.8 },
-        unit_price: { value: price, confidence: typeof priceObj.confidence === 'number' ? priceObj.confidence : 0.8 },
-        subtotal: { value: subtotal, confidence: typeof subtotalObj.confidence === 'number' ? subtotalObj.confidence : 0.8 }
-      };
-    })
-    .filter(Boolean);
-
-  // 4. Sanitize Total Amount
-  const totalObj = raw.total_amount || {};
-  let totalVal = Number(totalObj.value !== undefined ? totalObj.value : (totalObj || 0));
-
-  // Sum up all subtotals
-  const sumOfSubtotals = sanitizedItems.reduce((sum: number, it: any) => sum + it.subtotal.value, 0);
-
-  // If items exist, force total_amount to equal the sum of item subtotals for absolute financial consistency
-  if (sanitizedItems.length > 0) {
-    totalVal = sumOfSubtotals;
-  } else {
-    totalVal = Math.max(0, totalVal);
-  }
-
-  // If there are no items but we have a total amount, create a generic item to match
-  if (sanitizedItems.length === 0 && totalVal > 0) {
     sanitizedItems.push({
-      name: { value: 'Item tidak teridentifikasi', confidence: 0.5 },
-      quantity: { value: 1, confidence: 0.5 },
-      unit: { value: 'pcs', confidence: 0.5 },
-      unit_price: { value: totalVal, confidence: 0.5 },
-      subtotal: { value: totalVal, confidence: 0.5 }
+      name: { value: name, confidence: extractConf(itemObj.name) },
+      quantity: { value: qty, confidence: extractConf(itemObj.quantity) },
+      unit: { value: unit, confidence: extractConf(itemObj.unit) },
+      unit_price: { value: unitPrice, confidence: extractConf(itemObj.unit_price) },
+      subtotal: { value: subtotal, confidence: extractConf(itemObj.subtotal) },
     });
   }
 
-  const totalConfidence = typeof totalObj.confidence === 'number' ? totalObj.confidence : 0.8;
+  // 4. Total = always sum of subtotals (never trust the LLM's total)
+  const totalFromItems = sanitizedItems.reduce((sum, it) => sum + it.subtotal.value, 0);
+  
+  // If no items were parsed, use the LLM's total as a last resort
+  let totalVal = totalFromItems;
+  if (sanitizedItems.length === 0) {
+    totalVal = Math.max(0, Math.round(Number(extractVal(raw.total_amount, 0)) || 0));
+    if (totalVal > 0) {
+      // Create a single placeholder item so ExtractionResult can render it
+      sanitizedItems.push({
+        name: { value: 'Item tidak teridentifikasi', confidence: 0.3 },
+        quantity: { value: 1, confidence: 0.3 },
+        unit: { value: 'pcs', confidence: 0.3 },
+        unit_price: { value: totalVal, confidence: 0.3 },
+        subtotal: { value: totalVal, confidence: 0.3 },
+      });
+    }
+  }
 
   return {
-    vendor_name: { value: vendorName, confidence: vendorConfidence },
-    transaction_date: { value: dateVal, confidence: dateConfidence },
+    vendor_name: { value: vendorName, confidence: extractConf(vendorRaw) },
+    transaction_date: { value: dateVal, confidence: extractConf(dateRaw) },
     items: sanitizedItems,
-    total_amount: { value: totalVal, confidence: totalConfidence }
+    total_amount: { value: totalVal, confidence: extractConf(raw.total_amount) },
   };
 }
