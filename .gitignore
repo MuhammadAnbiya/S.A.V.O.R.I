@@ -30,9 +30,11 @@ build/
 
 # Local Python/ML development
 venv/
-*.pkl
-*.py
-database.sqlite
-test_gemini.mjs
-app/api/test-db/
+services/forecasting/venv/
+__pycache__/
+
+# Large models
+# *.pkl (Uncomment if your model becomes too large for GitHub)
+
+# Next.js / TypeScript build info
 tsconfig.tsbuildinfo
