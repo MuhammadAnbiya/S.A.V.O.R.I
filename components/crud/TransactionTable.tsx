@@ -162,6 +162,9 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
                     </span>
                   </td>
                   <td className="px-4 py-3">
+                    {trx.payment_method || 'Cash'}
+                  </td>
+                  <td className="px-4 py-3">
                     <span className="px-2 py-1 rounded-full text-xs font-medium bg-surface-soft text-text-secondary border border-border">
                       {trx.source || 'Manual'}
                     </span>

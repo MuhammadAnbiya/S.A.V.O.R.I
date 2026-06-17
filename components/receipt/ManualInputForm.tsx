@@ -209,82 +209,102 @@ export default function ManualInputForm({ initialData }: { initialData?: any }) 
           </Button>
         </div>
 
-        <div className="border rounded-md overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 border-b">
-              <tr>
-                <th className="p-3 text-left font-medium">Nama Item</th>
-                <th className="p-3 text-left font-medium w-20">Qty</th>
-                <th className="p-3 text-left font-medium w-24">Satuan</th>
-                <th className="p-3 text-left font-medium w-32">Harga Satuan</th>
-                <th className="p-3 text-left font-medium w-32">Subtotal</th>
-                <th className="p-3 w-12"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.items.map((item: any) => (
-                <tr key={item.id} className="border-b last:border-0">
-                  <td className="p-2">
-                    <Input 
-                      value={item.name} 
-                      onChange={(e) => handleItemChange(item.id, 'name', e.target.value)}
-                      className="h-8"
-                      required
-                    />
-                  </td>
-                  <td className="p-2">
+        <div className="space-y-3">
+          {/* Desktop Header */}
+          <div className="hidden md:grid grid-cols-12 gap-2 px-3 py-2 bg-muted/50 border rounded-t-md font-medium text-sm text-text-secondary">
+            <div className="col-span-4">Nama Item</div>
+            <div className="col-span-2 text-center">Qty</div>
+            <div className="col-span-2 text-center">Satuan</div>
+            <div className="col-span-2 text-right">Harga</div>
+            <div className="col-span-2 text-right">Subtotal</div>
+          </div>
+
+          <div className="space-y-3 md:space-y-0 md:border md:rounded-b-md md:border-t-0 md:-mt-3">
+            {data.items.map((item: any, index: number) => (
+              <div 
+                key={item.id} 
+                className="relative bg-white border rounded-lg p-3 shadow-sm md:grid md:grid-cols-12 md:gap-2 md:items-center md:border-0 md:border-b md:last:border-0 md:rounded-none md:shadow-none md:p-2"
+              >
+                {/* Mobile Header */}
+                <div className="flex justify-between items-center mb-2 md:hidden">
+                  <span className="text-xs font-semibold text-text-tertiary uppercase">Item {index + 1}</span>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 text-danger hover:bg-danger/10"
+                    onClick={() => removeItem(item.id)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+
+                <div className="col-span-4 mb-2 md:mb-0">
+                  <Label className="text-xs text-text-secondary md:hidden mb-1 block">Nama Item</Label>
+                  <Input 
+                    value={item.name} 
+                    onChange={(e) => handleItemChange(item.id, 'name', e.target.value)}
+                    className="h-9 md:h-8"
+                    required
+                    placeholder="Nama barang..."
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 mb-2 md:mb-0 md:col-span-4">
+                  <div>
+                    <Label className="text-xs text-text-secondary md:hidden mb-1 block">Qty</Label>
                     <Input 
                       type="number" 
                       value={item.quantity} 
                       onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value)}
-                      className="h-8"
+                      className="h-9 md:h-8"
                       min="0.01"
                       step="any"
                       required
                     />
-                  </td>
-                  <td className="p-2">
+                  </div>
+                  <div>
+                    <Label className="text-xs text-text-secondary md:hidden mb-1 block">Satuan</Label>
                     <Input 
                       value={item.unit} 
                       onChange={(e) => handleItemChange(item.id, 'unit', e.target.value)}
-                      className="h-8"
+                      className="h-9 md:h-8"
+                      placeholder="pcs, kg..."
                     />
-                  </td>
-                  <td className="p-2">
-                    <Input 
-                      type="number" 
-                      value={item.unit_price} 
-                      onChange={(e) => handleItemChange(item.id, 'unit_price', e.target.value)}
-                      className="h-8"
-                      min="0"
-                      required
-                    />
-                  </td>
-                  <td className="p-2">
-                    <Input 
-                      type="number" 
-                      value={item.subtotal} 
-                      onChange={(e) => handleItemChange(item.id, 'subtotal', e.target.value)}
-                      className="h-8 bg-muted/30"
-                      readOnly
-                    />
-                  </td>
-                  <td className="p-2 text-center">
+                  </div>
+                </div>
+
+                <div className="col-span-2 mb-2 md:mb-0">
+                  <Label className="text-xs text-text-secondary md:hidden mb-1 block">Harga Satuan</Label>
+                  <Input 
+                    type="number" 
+                    value={item.unit_price} 
+                    onChange={(e) => handleItemChange(item.id, 'unit_price', e.target.value)}
+                    className="h-9 md:h-8 md:text-right"
+                    min="0"
+                    required
+                  />
+                </div>
+
+                <div className="col-span-2 flex items-center justify-between md:justify-end">
+                  <Label className="text-xs text-text-secondary md:hidden">Subtotal</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm md:mr-2">Rp {Number(item.subtotal).toLocaleString('id-ID')}</span>
+                    {/* Desktop Delete Button */}
                     <Button 
                       type="button" 
                       variant="ghost" 
                       size="icon" 
-                      className="h-8 w-8 text-danger hover:text-danger hover:bg-danger/10" 
+                      className="h-8 w-8 text-danger hover:bg-danger/10 hidden md:flex"
                       onClick={() => removeItem(item.id)}
-                      disabled={data.items.length === 1}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
