@@ -76,24 +76,57 @@ export default function FileUploader() {
     setError(null);
 
     try {
-      // Convert file to base64
-      const reader = new FileReader();
+      // Compress image client-side to drastically reduce Qwen/Gemini visual token processing time
+      let imageBase64 = "";
+      let finalMimeType = selectedFile.type;
       
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const result = reader.result as string;
-          // Extract just the base64 part
-          const base64 = result.split(',')[1];
-          resolve(base64);
-        };
-        reader.onerror = reject;
-      });
-      
-      reader.readAsDataURL(selectedFile);
-      const imageBase64 = await base64Promise;
+      if (selectedFile.type.startsWith('image/')) {
+        imageBase64 = await new Promise<string>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const MAX_DIMENSION = 1024; // Sweet spot: fast processing, sharp text
+            
+            if (width > height && width > MAX_DIMENSION) {
+              height = Math.round(height * (MAX_DIMENSION / width));
+              width = MAX_DIMENSION;
+            } else if (height > MAX_DIMENSION) {
+              width = Math.round(width * (MAX_DIMENSION / height));
+              height = MAX_DIMENSION;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              reject(new Error('Failed to initialize canvas'));
+              return;
+            }
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Compress to JPEG with 80% quality
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            finalMimeType = 'image/jpeg';
+            resolve(dataUrl.split(',')[1]);
+          };
+          img.onerror = () => reject(new Error('Gagal memuat gambar untuk kompresi'));
+          img.src = URL.createObjectURL(selectedFile);
+        });
+      } else {
+        // For non-images (if supported later)
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve((reader.result as string).split(',')[1]);
+          reader.onerror = reject;
+        });
+        reader.readAsDataURL(selectedFile);
+        imageBase64 = await base64Promise;
+      }
 
       const { extractReceiptWithOCR } = await import('@/lib/receipt-ocr');
-      const result = await extractReceiptWithOCR(imageBase64, selectedFile.type);
+      const result = await extractReceiptWithOCR(imageBase64, finalMimeType);
 
       // Validate result — confidence === 0 means total OCR failure
       if (!result || (result.vendor_name.confidence === 0 && result.total_amount.confidence === 0)) {
