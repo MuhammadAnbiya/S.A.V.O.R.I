@@ -149,7 +149,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
 
           {/* Logout */}
-          <Link
+          <a
             href="/logout"
             style={{
               display: 'flex',
@@ -176,7 +176,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           >
             <LogOut size={16} />
             {!collapsed && <span>Logout</span>}
-          </Link>
+          </a>
         </div>
       </aside>
 
