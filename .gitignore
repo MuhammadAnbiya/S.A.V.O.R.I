@@ -27,3 +27,11 @@ build/
 #database
 *.db
 .vercel
+
+# Local Python/ML development
+venv/
+*.pkl
+*.py
+database.sqlite
+test_gemini.mjs
+app/api/test-db/
