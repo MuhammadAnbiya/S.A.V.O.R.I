@@ -2,10 +2,16 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-export const geminiModel = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+// Chain of models to try in sequence if one fails (503/429/404)
+const MODEL_CHAIN = [
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-flash-latest",
+  "gemini-3.1-flash-lite"
+];
 
 /**
- * Extracts information from a receipt image using Gemini
+ * Extracts information from a receipt image using Gemini with automatic model rotation fallback.
  * @param imageBase64 Base64 encoded image string
  * @param mimeType MIME type of the image (e.g., 'image/jpeg')
  * @returns Promise with the parsed JSON from Gemini
@@ -46,23 +52,43 @@ Extract all information from this receipt/invoice image and return ONLY valid JS
   "total_amount": {"value": 15000, "confidence": 0.0-1.0}
 }`;
 
-  try {
-    const result = await geminiModel.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: imageBase64,
-          mimeType,
+  let lastError: any = null;
+
+  for (const modelName of MODEL_CHAIN) {
+    try {
+      console.log(`[Gemini Vision] Attempting extraction with model: ${modelName}`);
+      const model = genAI.getGenerativeModel({ model: modelName });
+      
+      const result = await model.generateContent([
+        prompt,
+        {
+          inlineData: {
+            data: imageBase64,
+            mimeType,
+          },
         },
-      },
-    ]);
-    const response = await result.response;
-    const text = response.text();
-    // Strip markdown code fences if present
-    const cleaned = text.replace(/```json\n?|```/g, '').trim();
-    return JSON.parse(cleaned);
-  } catch (error: any) {
-    console.error('Gemini extraction error:', error.message || error);
-    throw new Error(error.message || 'Gagal menghubungi server AI');
+      ]);
+      
+      const response = await result.response;
+      const text = response.text();
+      // Strip markdown code fences if present
+      const cleaned = text.replace(/```json\n?|```/g, '').trim();
+      
+      const parsed = JSON.parse(cleaned);
+      console.log(`[Gemini Vision] Successfully extracted using ${modelName}`);
+      
+      // We also attach which model won to parsed response so metadata stays correct
+      parsed._extracted_by_model = modelName;
+      return parsed;
+
+    } catch (error: any) {
+      console.warn(`[Gemini Vision] Model ${modelName} failed:`, error.message || error);
+      lastError = error;
+      // Continue to next model in loop
+    }
   }
+
+  // If all models failed:
+  console.error('[Gemini Vision] All models in the chain failed.');
+  throw new Error(lastError?.message || 'Gagal menghubungi server AI');
 }
