@@ -285,37 +285,25 @@ export function parseTextRegex(fullText: string, ocrConfidence: number): Receipt
 
 export async function extractReceiptWithOCR(imageBase64: string, mimeType: string): Promise<ReceiptResult> {
   try {
-    // 1. Run Client-side OCR to extract raw text
-    const { text, confidence } = await performOCR(imageBase64, mimeType);
-    
-    if (!text.trim()) {
-      return createEmptyResult('Tidak ada teks yang terdeteksi pada gambar struk.');
-    }
+    console.log('[Receipt Scanner] Sending image directly to Gemini Vision API...');
+    const response = await fetch('/api/scanner/vision', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64, mimeType })
+    });
 
-    // 2. Try to send raw text to our Server/Groq parser API
-    try {
-      const response = await fetch('/api/scanner/extract', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rawText: text })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.status === 'success' && result.data) {
-          console.log('[Receipt Scanner] Successfully parsed via Groq LLM API');
-          return result.data;
-        }
+    if (response.ok) {
+      const result = await response.json();
+      if (result.status === 'success' && result.data) {
+        console.log('[Receipt Scanner] Successfully parsed via Gemini Vision');
+        return result.data;
       }
-      console.warn('[Receipt Scanner] API call not successful, falling back to local regex parser');
-    } catch (apiErr) {
-      const message = apiErr instanceof Error ? apiErr.message : String(apiErr);
-      console.warn('[Receipt Scanner] Remote parser failed, falling back to local regex:', message);
     }
 
-    // 3. Fallback to local regex parser
-    return parseTextRegex(text, confidence);
-
+    // If Vision API fails (e.g. quota, error), we throw an error so the fallback UI can catch it
+    const errBody = await response.text();
+    console.error('[Receipt Scanner] Vision API failed:', errBody);
+    throw new Error('Gagal memproses gambar melalui AI Vision.');
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('OCR main thread error:', message);
