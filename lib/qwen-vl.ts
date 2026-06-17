@@ -1,4 +1,4 @@
-wimport OpenAI from 'openai';
+import OpenAI from 'openai';
 
 const QWEN_API_KEY = process.env.QWEN_API_KEY || '';
 // Default menggunakan endpoint OpenAI-compatible (misal: Together AI, SiliconFlow, atau Ollama Lokal)
