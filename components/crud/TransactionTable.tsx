@@ -134,8 +134,8 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
               <th className="px-4 py-3 font-medium">Kategori</th>
               <th className="px-4 py-3 font-medium">Metode</th>
               <th className="px-4 py-3 font-medium">Sumber</th>
-              <th className="px-4 py-3 font-medium text-right">Total (Rp)</th>
               <th className="px-4 py-3 font-medium text-center">Aksi</th>
+              <th className="px-4 py-3 font-medium text-right">Total (Rp)</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -165,10 +165,6 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
                     <span className="px-2 py-1 rounded-full text-xs font-medium bg-surface-soft text-text-secondary border border-border">
                       {trx.source || 'Manual'}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-right font-bold">
-                    {trx.amount.toLocaleString('id-ID')}
-                  </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-center space-x-1">
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-text-secondary hover:text-primary" onClick={() => toggleExpand(trx.id)}>
@@ -182,11 +178,14 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
                       </Button>
                     </div>
                   </td>
+                  <td className="px-4 py-3 text-right font-bold">
+                    {trx.amount.toLocaleString('id-ID')}
+                  </td>
                 </tr>
                 
                 {expandedIds.has(trx.id) && (
                   <tr className="bg-main/20">
-                    <td colSpan={7} className="px-10 py-4 border-b">
+                    <td colSpan={9} className="px-10 py-4 border-b">
                       <div className="bg-white p-4 rounded border shadow-sm">
                         <h4 className="text-xs font-bold text-text-secondary uppercase mb-2 border-b pb-2">Detail Item</h4>
                         {trx.items && trx.items.length > 0 ? (
