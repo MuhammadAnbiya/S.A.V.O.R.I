@@ -15,7 +15,8 @@ CREATE TABLE transactions (
     category VARCHAR(100),
     amount NUMERIC(15, 2) NOT NULL DEFAULT 0,
     status VARCHAR(50) DEFAULT 'Pending', -- Pending / Verified
-    source VARCHAR(50), -- Camera / Upload / Manual
+    source VARCHAR(50), -- Camera / Upload / Manual / Pesan Suara
+    payment_method VARCHAR(50) DEFAULT 'Cash', -- Cash / QRIS / DANA / dll
     receipt_image_url TEXT,
     notes TEXT,
     average_confidence NUMERIC(3, 2), -- 0.00 to 1.00

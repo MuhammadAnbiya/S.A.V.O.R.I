@@ -74,6 +74,9 @@ export default function FilterSidebar({ onApply, onReset, branches = [] }: { onA
             className="text-sm" 
             value={vendor}
             onChange={(e) => setVendor(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleApply();
+            }}
           />
         </div>
 
@@ -115,7 +118,7 @@ export default function FilterSidebar({ onApply, onReset, branches = [] }: { onA
         <div className="space-y-2">
           <Label className="text-sm font-semibold">Sumber Input</Label>
           <div className="flex flex-wrap gap-2 mt-2">
-            {['Kamera', 'Upload', 'Manual'].map(src => (
+            {['Scanner', 'Manual', 'Upload', 'Pesan Suara'].map(src => (
               <label key={src} className="flex items-center space-x-2 text-sm bg-main px-3 py-1.5 rounded-full cursor-pointer hover:bg-primary/10 transition-colors">
                 <input 
                   type="checkbox" 

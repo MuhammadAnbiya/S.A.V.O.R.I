@@ -5,6 +5,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import TalkToDataPanel from '@/components/chat/TalkToDataPanel';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   LayoutDashboard,
   Database,
   Upload,
@@ -195,21 +203,41 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div style={{ fontSize: '0.875rem', color: '#6c6a64', fontWeight: 500 }}>
             {navItems.find(n => pathname.startsWith(n.href))?.label ?? 'Dashboard'}
           </div>
-
           {/* Right cluster */}
           <div className="flex items-center gap-3">
-            {/* Avatar */}
-            <div
-              className="flex items-center justify-center rounded-full font-semibold text-sm"
-              style={{
-                width: 34,
-                height: 34,
-                backgroundColor: '#cc785c',
-                color: '#fff',
-              }}
-            >
-              U
-            </div>
+            {/* Avatar Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div
+                  className="flex items-center justify-center rounded-full font-semibold text-sm cursor-pointer hover:opacity-90 transition-opacity"
+                  style={{
+                    width: 34,
+                    height: 34,
+                    backgroundColor: '#cc785c',
+                    color: '#fff',
+                  }}
+                >
+                  U
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-white border-border shadow-md">
+                <DropdownMenuLabel className="font-semibold">Akun Saya</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-border" />
+                <DropdownMenuItem asChild className="cursor-pointer hover:bg-main">
+                  <a href="/dashboard/overview" className="w-full flex items-center">
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-border" />
+                <DropdownMenuItem asChild className="cursor-pointer text-danger focus:text-danger hover:bg-danger/10">
+                  <a href="/logout" className="w-full flex items-center">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Keluar (Logout)</span>
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 

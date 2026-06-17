@@ -11,6 +11,12 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState('Tanggal (Terbaru)');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, sortOption, transactions]);
 
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => {
@@ -59,6 +65,12 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
     return result;
   }, [transactions, searchQuery, sortOption]);
 
+  const totalPages = Math.ceil(processedTransactions.length / itemsPerPage);
+  const paginatedTransactions = processedTransactions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
       const allIds = new Set<string>(processedTransactions.map((t: any) => t.id));
@@ -106,7 +118,7 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
 
       <div className="overflow-x-auto flex-1">
         <table className="w-full text-sm text-left">
-          <thead className="bg-main/50 text-text-secondary border-b sticky top-0 z-10">
+          <thead className="bg-white text-text-secondary border-b sticky top-0 z-20 shadow-sm">
             <tr>
               <th className="px-4 py-3 w-12 text-center">
                 <input 
@@ -120,12 +132,14 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
               <th className="px-4 py-3 font-medium">Tanggal</th>
               <th className="px-4 py-3 font-medium">Vendor</th>
               <th className="px-4 py-3 font-medium">Kategori</th>
+              <th className="px-4 py-3 font-medium">Metode</th>
+              <th className="px-4 py-3 font-medium">Sumber</th>
               <th className="px-4 py-3 font-medium text-right">Total (Rp)</th>
               <th className="px-4 py-3 font-medium text-center">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {processedTransactions.map((trx: any) => (
+            {paginatedTransactions.map((trx: any) => (
               <React.Fragment key={trx.id}>
                 <tr className={`hover:bg-main/30 transition-colors ${expandedIds.has(trx.id) ? 'bg-main/50' : ''}`}>
                   <td className="px-4 py-3 text-center">
@@ -145,6 +159,11 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
                   <td className="px-4 py-3">
                     <span className="px-2 py-1 rounded-full text-xs font-medium bg-main text-text-secondary border">
                       {trx.category || 'Belum Kategori'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-surface-soft text-text-secondary border border-border">
+                      {trx.source || 'Manual'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right font-bold">
@@ -207,16 +226,41 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
       <div className="p-4 border-t flex flex-col md:flex-row gap-4 justify-between items-center text-sm text-text-secondary bg-white">
         <div className="flex items-center space-x-2 w-full md:w-auto justify-between md:justify-start">
           <span>Baris per halaman:</span>
-          <select className="border border-border rounded px-2 py-1 bg-main focus:outline-none focus:ring-1 focus:ring-primary">
-            <option>25</option>
-            <option>50</option>
-            <option>100</option>
+          <select 
+            className="border border-border rounded px-2 py-1 bg-main focus:outline-none focus:ring-1 focus:ring-primary"
+            value={itemsPerPage}
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+          >
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
           </select>
         </div>
-        <span className="text-center w-full md:w-auto">Total {processedTransactions.length} transaksi ditemukan</span>
+        <span className="text-center w-full md:w-auto">
+          Menampilkan {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, processedTransactions.length)} dari {processedTransactions.length} transaksi
+        </span>
         <div className="flex gap-2 w-full md:w-auto justify-between md:justify-end">
-          <Button variant="outline" size="sm" disabled className="bg-white w-full md:w-auto">Sebelumnya</Button>
-          <Button variant="outline" size="sm" className="bg-white w-full md:w-auto">Selanjutnya</Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            disabled={currentPage === 1} 
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            className="bg-white w-full md:w-auto"
+          >
+            Sebelumnya
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            disabled={currentPage === totalPages || totalPages === 0} 
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            className="bg-white w-full md:w-auto"
+          >
+            Selanjutnya
+          </Button>
         </div>
       </div>
     </Card>

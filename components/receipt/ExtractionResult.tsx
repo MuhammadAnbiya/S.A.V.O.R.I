@@ -22,6 +22,7 @@ export default function ExtractionResult({ initialData, onCancel, source = 'Scan
     transaction_date: initialData?.transaction_date?.value || '',
     category: 'Operasional',
     branch: 'Pusat',
+    payment_method: initialData?.payment_method || 'Cash',
     total_amount: initialData?.total_amount?.value || 0,
     items: (initialData?.items || []).map((item: any, id: number) => ({
       id: id.toString(),
@@ -121,6 +122,7 @@ export default function ExtractionResult({ initialData, onCancel, source = 'Scan
         type: 'Pengeluaran',
         category: data.category,
         branch: data.branch,
+        payment_method: data.payment_method,
         status: 'Verified',
         source: source,
         items: finalItems,
@@ -200,6 +202,25 @@ export default function ExtractionResult({ initialData, onCancel, source = 'Scan
               value={data.branch}
               onChange={(e) => setData({...data, branch: e.target.value})}
             />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="payment_method">Metode Pembayaran</Label>
+            <select 
+              id="payment_method" 
+              value={data.payment_method}
+              onChange={(e) => setData({...data, payment_method: e.target.value})}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value="Cash">Cash (Tunai)</option>
+              <option value="QRIS">QRIS</option>
+              <option value="DANA">DANA</option>
+              <option value="GoPay">GoPay</option>
+              <option value="OVO">OVO</option>
+              <option value="ShopeePay">ShopeePay</option>
+              <option value="Transfer Bank">Transfer Bank</option>
+              <option value="Kartu Kredit">Kartu Kredit / Debit</option>
+            </select>
           </div>
         </div>
 

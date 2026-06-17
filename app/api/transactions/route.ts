@@ -34,7 +34,9 @@ export async function GET(request: NextRequest) {
     // Apply sorting
     const sortField = searchParams.get('sort') || 'transaction_date';
     const sortOrder = searchParams.get('order') || 'desc';
-    query = query.order(sortField, { ascending: sortOrder === 'asc' });
+    query = query
+      .order(sortField, { ascending: sortOrder === 'asc' })
+      .order('created_at', { ascending: false }); // secondary sort for same-day transactions
 
     // Apply pagination
     const { data, count, error } = await query.range(from, to);
