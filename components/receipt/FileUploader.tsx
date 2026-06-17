@@ -125,7 +125,7 @@ export default function FileUploader() {
             <RefreshCw className="mr-2 h-4 w-4" /> Upload Lainnya
           </Button>
         </div>
-        <ExtractionResult initialData={extractionResult} onCancel={removeFile} />
+        <ExtractionResult initialData={extractionResult} onCancel={removeFile} source="Upload" />
       </div>
     );
   }

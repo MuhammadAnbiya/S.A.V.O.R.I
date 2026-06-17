@@ -18,44 +18,66 @@ export async function GET(request: NextRequest) {
     // Jika models/*.pkl belum ada (pre-trained), generate mock forecast dari moving average historical data
     // agar fitur UI bisa ditest tanpa model real
 
-    // Fallback algorithm (jika model belum ada):
-    // 1. Ambil 30 hari terakhir net_sales dari daily_sales (Mocked historical baseline)
-    const baseAmount = 5000000; 
-    const forecasts = [];
-
-    const today = new Date();
-    
-    for (let i = 1; i <= days; i++) {
-      const forecastDate = new Date(today);
-      forecastDate.setDate(today.getDate() + i);
+    const { data: recentSales } = await supabase
+      .from('transactions')
+      .select('amount')
+      .eq('type', 'income')
+      .is('deleted_at', null)
+      .order('transaction_date', { ascending: false })
+      .limit(7);
       
-      const dayOfWeek = forecastDate.getDay();
-      
-      // 3. Tambah seasonal factor (weekday vs weekend)
-      const seasonalFactor = (dayOfWeek === 0 || dayOfWeek === 6) ? 1.4 : 0.9;
-      const noise = (Math.random() * 0.2) + 0.9; // 0.9 to 1.1
-      
-      const predicted_revenue = Math.round(baseAmount * seasonalFactor * noise);
-      
-      // 4. Generate confidence_lower = predicted * 0.93, confidence_upper = predicted * 1.07
-      const confidence_lower = Math.round(predicted_revenue * 0.93);
-      const confidence_upper = Math.round(predicted_revenue * 1.07);
-
-      forecasts.push({
-        date: forecastDate.toISOString().split('T')[0],
-        predicted_revenue,
-        confidence_lower,
-        confidence_upper
-      });
+    // Calculate an average base sale for the model, or default to 5jt
+    let baseAmount = 5000000;
+    if (recentSales && recentSales.length > 0) {
+      baseAmount = recentSales.reduce((acc, curr) => acc + Number(curr.amount || 0), 0) / recentSales.length;
     }
 
-    // Return format wajib
-    return NextResponse.json({
-      status: "success",
-      data: forecasts,
-      metadata: {
-        model_version: "v1.0-fallback",
-        data_points_used: 30
+    // Call Python script
+    const { exec } = require('child_process');
+    const path = require('path');
+    
+    return new Promise((resolve) => {
+      const inputPayload = JSON.stringify({
+        days,
+        base_sales: baseAmount
+      });
+      
+      const pythonProcess = exec(
+        // Use the venv python we just created
+        `./venv/bin/python predict.py`,
+        { cwd: process.cwd() },
+        (error: any, stdout: string, stderr: string) => {
+          if (error) {
+            console.error('Python error:', error);
+            console.error('Stderr:', stderr);
+            return resolve(NextResponse.json({ error: 'Failed to run ML model' }, { status: 500 }));
+          }
+          
+          try {
+            const result = JSON.parse(stdout);
+            if (result.status === 'error') {
+              return resolve(NextResponse.json({ error: result.message }, { status: 500 }));
+            }
+            
+            return resolve(NextResponse.json({
+              status: "success",
+              data: result.data,
+              metadata: {
+                model_version: "v2.0-xgboost-local",
+                data_points_used: recentSales?.length || 0
+              }
+            }));
+          } catch (e: any) {
+            console.error("Parse error:", stdout);
+            return resolve(NextResponse.json({ error: 'Invalid model output' }, { status: 500 }));
+          }
+        }
+      );
+      
+      // Send input via stdin
+      if (pythonProcess.stdin) {
+        pythonProcess.stdin.write(inputPayload);
+        pythonProcess.stdin.end();
       }
     });
   } catch (error: any) {

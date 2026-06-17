@@ -10,15 +10,29 @@ export async function GET(request: NextRequest) {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Mock data for Monthly Revenue Chart
-    const monthlyData = [
-      { month: 'Jan', actual_revenue: 12000000, prev_year_revenue: 10000000, target: 15000000 },
-      { month: 'Feb', actual_revenue: 15000000, prev_year_revenue: 11000000, target: 15000000 },
-      { month: 'Mar', actual_revenue: 14000000, prev_year_revenue: 12000000, target: 15000000 },
-      { month: 'Apr', actual_revenue: 18000000, prev_year_revenue: 13000000, target: 16000000 },
-      { month: 'May', actual_revenue: 22000000, prev_year_revenue: 15000000, target: 20000000 },
-      { month: 'Jun', actual_revenue: 25000000, prev_year_revenue: 18000000, target: 22000000 },
-    ];
+    const { data: transactions, error } = await supabase
+      .from('transactions')
+      .select('transaction_date, amount')
+      .eq('type', 'income')
+      .is('deleted_at', null)
+      .order('transaction_date', { ascending: true });
+
+    if (error) throw error;
+
+    const monthlyMap: Record<string, number> = {};
+    if (transactions) {
+      transactions.forEach((tx) => {
+        const month = new Date(tx.transaction_date).toLocaleDateString('id-ID', { month: 'short' });
+        monthlyMap[month] = (monthlyMap[month] || 0) + (tx.amount || 0);
+      });
+    }
+
+    const monthlyData = Object.keys(monthlyMap).map(month => ({
+      month,
+      actual_revenue: monthlyMap[month],
+      prev_year_revenue: 0,
+      target: 0
+    }));
 
     return NextResponse.json({ data: monthlyData });
   } catch (error: any) {

@@ -139,7 +139,7 @@ export default function ManualInputForm({ initialData }: { initialData?: any }) 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="space-y-2">
           <Label htmlFor="type">Jenis Transaksi</Label>
           <select 
@@ -148,8 +148,23 @@ export default function ManualInputForm({ initialData }: { initialData?: any }) 
             onChange={(e) => setData({...data, type: e.target.value})}
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <option value="pengeluaran">Pengeluaran</option>
-            <option value="pemasukan">Pemasukan</option>
+            <option value="Pengeluaran">Pengeluaran</option>
+            <option value="Pemasukan">Pemasukan</option>
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="category">Kategori</Label>
+          <select 
+            id="category" 
+            value={data.category}
+            onChange={(e) => setData({...data, category: e.target.value})}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <option value="Operasional">Operasional</option>
+            <option value="Peralatan">Peralatan</option>
+            <option value="Bahan Baku">Bahan Baku</option>
+            <option value="Transportasi">Transportasi</option>
           </select>
         </div>
 
@@ -177,15 +192,12 @@ export default function ManualInputForm({ initialData }: { initialData?: any }) 
 
         <div className="space-y-2">
           <Label htmlFor="branch">Cabang</Label>
-          <select 
+          <Input 
             id="branch" 
+            placeholder="Contoh: Pusat, Cabang 1"
             value={data.branch}
             onChange={(e) => setData({...data, branch: e.target.value})}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <option value="pusat">Pusat</option>
-            <option value="cabang_1">Cabang 1</option>
-          </select>
+          />
         </div>
       </div>
 

@@ -15,28 +15,64 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get('date_from');
     const dateTo = searchParams.get('date_to');
 
-    // Real implementation would do aggregations here.
-    // For now, we return a structured payload matching the brief's requirements.
-    // In a real scenario, this would use Supabase RPC or complex views.
-    
+    const { data: transactions, error: trxError } = await supabase
+      .from('transactions')
+      .select('id, amount, type, status')
+      .is('deleted_at', null);
+
+    if (trxError) throw trxError;
+
+    const { data: items, error: itemsError } = await supabase
+      .from('transaction_items')
+      .select('qty, transactions!inner(deleted_at)')
+      .is('transactions.deleted_at', null);
+
+    if (itemsError) throw itemsError;
+
+    let net_sales = 0;
+    let total_transactions = 0;
+    let total_items = 0;
+    let total_refunds = 0;
+    let refund_count = 0;
+
+    if (transactions) {
+      transactions.forEach(t => {
+        if (t.type === 'income' || t.type === 'Pemasukan') {
+          net_sales += Number(t.amount || 0);
+          total_transactions += 1;
+        } else if (t.type === 'refund' || t.type === 'Pengeluaran') {
+          total_refunds += Number(t.amount || 0);
+          refund_count += 1;
+        }
+      });
+    }
+
+    if (items) {
+      items.forEach((item: any) => {
+        total_items += Number(item.qty || 0);
+      });
+    }
+
+    const avg_per_transaction = total_transactions > 0 ? net_sales / total_transactions : 0;
+
     const kpiData = {
       penjualan: {
-        avg_per_transaction: 450000,
-        total_transactions: 1250,
-        net_sales: 562500000,
-        total_items: 4500,
-        delta_avg: 5.2,
-        delta_net_sales: 12.4,
+        avg_per_transaction,
+        total_transactions,
+        net_sales,
+        total_items,
+        delta_avg: 0, // In real app, calculate diff from prev period
+        delta_net_sales: 0,
         status: "green"
       },
       anomali: {
-        total_refunds: 1500000,
-        refund_count: 5,
-        total_void: 500000,
-        void_count: 2,
-        void_percentage: 0.1,
-        delta_refunds: -2.5,
-        delta_void: -1.0,
+        total_refunds,
+        refund_count,
+        total_void: 0,
+        void_count: 0,
+        void_percentage: 0,
+        delta_refunds: 0,
+        delta_void: 0,
         status_refunds: "green",
         status_void: "green"
       }

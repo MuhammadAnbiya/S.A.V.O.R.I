@@ -16,6 +16,8 @@ export default function DatabasePage() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [sidebarFilters, setSidebarFilters] = useState<any>({});
+
   // Fetch data on load
   const fetchTransactions = async () => {
     setIsLoading(true);
@@ -28,6 +30,13 @@ export default function DatabasePage() {
           ...trx,
           date: trx.transaction_date,
           vendor: trx.vendor_name,
+          items: trx.transaction_items?.map((ti: any) => ({
+            name: ti.name || 'Item tidak diketahui',
+            qty: ti.qty || 1,
+            unit: ti.unit || 'pcs',
+            price: ti.price || 0,
+            subtotal: ti.subtotal || 0
+          })) || []
         }));
         setTransactions(formatted);
       }
@@ -88,6 +97,71 @@ export default function DatabasePage() {
     }
   };
 
+  const filteredTransactions = transactions.filter(trx => {
+    let pass = true;
+    if (sidebarFilters.vendor) {
+      if (!trx.vendor?.toLowerCase().includes(sidebarFilters.vendor.toLowerCase())) pass = false;
+    }
+    if (sidebarFilters.category && sidebarFilters.category.length > 0) {
+      if (!sidebarFilters.category.includes(trx.category)) pass = false;
+    }
+    if (sidebarFilters.branch) {
+      if (!trx.branch?.toLowerCase().includes(sidebarFilters.branch.toLowerCase())) pass = false;
+    }
+    if (sidebarFilters.startDate) {
+      const trxDate = new Date(trx.date || 0).setHours(0,0,0,0);
+      const startDate = new Date(sidebarFilters.startDate).setHours(0,0,0,0);
+      if (trxDate < startDate) pass = false;
+    }
+    if (sidebarFilters.endDate) {
+      const trxDate = new Date(trx.date || 0).setHours(0,0,0,0);
+      const endDate = new Date(sidebarFilters.endDate).setHours(0,0,0,0);
+      if (trxDate > endDate) pass = false;
+    }
+    if (sidebarFilters.sources && sidebarFilters.sources.length > 0) {
+      const trxSource = (trx.source || '').toLowerCase();
+      if (!sidebarFilters.sources.some((s: string) => trxSource.includes(s.toLowerCase()))) pass = false;
+    }
+    return pass;
+  });
+
+  const handleExportCSV = () => {
+    if (filteredTransactions.length === 0) {
+      alert("Tidak ada data untuk diekspor");
+      return;
+    }
+    
+    const headers = ['No. Ref', 'Tanggal', 'Vendor', 'Kategori', 'Total (Rp)', 'Sumber', 'Cabang', 'Status', 'Catatan', 'Detail Item'];
+    
+    const rows = filteredTransactions.map(trx => {
+      const itemsString = trx.items?.map((i:any) => `${i.name} (${i.qty}x)`).join('; ') || '';
+      return [
+        trx.id,
+        trx.date,
+        `"${trx.vendor || ''}"`,
+        trx.category || '',
+        trx.amount,
+        trx.source || '',
+        trx.branch || '',
+        trx.status || '',
+        `"${(trx.notes || '').replace(/"/g, '""')}"`,
+        `"${itemsString}"`
+      ].join(',');
+    });
+    
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `savori_transactions_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const uniqueBranches = Array.from(new Set(transactions.map(t => t.branch).filter(Boolean)));
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -97,7 +171,7 @@ export default function DatabasePage() {
             Manajemen dan pantau semua data transaksi pengeluaran dan pemasukan.
           </p>
         </div>
-        <Button variant="outline" className="bg-white">
+        <Button variant="outline" className="bg-white" onClick={handleExportCSV}>
           <Download className="w-4 h-4 mr-2" /> Export CSV
         </Button>
       </div>
@@ -105,13 +179,17 @@ export default function DatabasePage() {
       <div className="flex flex-col lg:flex-row gap-6 items-start h-[calc(100vh-180px)]">
         {/* Kolom 1: Filter Sidebar (Lebar tetap) */}
         <div className="w-full lg:w-72 flex-shrink-0 h-full overflow-y-auto">
-          <FilterSidebar onApply={() => {}} onReset={() => {}} />
+          <FilterSidebar 
+            onApply={setSidebarFilters} 
+            onReset={() => setSidebarFilters({})} 
+            branches={uniqueBranches}
+          />
         </div>
 
         {/* Kolom 2: Transaction Table (Mengisi sisa ruang) */}
         <div className="flex-1 w-full h-full min-w-0">
           <TransactionTable 
-            transactions={transactions} 
+            transactions={filteredTransactions} 
             onEdit={handleEdit}
             onDelete={handleDelete}
             onSelectionChange={setSelectedIds}

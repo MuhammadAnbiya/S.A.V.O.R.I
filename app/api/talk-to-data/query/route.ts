@@ -15,90 +15,62 @@ export async function POST(request: NextRequest) {
 
     const { userMessage, branchIds = [], dateRange = {}, conversationHistory = [] } = await request.json();
 
+    // Fetch real data to feed to Gemini
+    // For large datasets, we should filter by date, but since context window is large,
+    // we fetch up to 300 recent transactions
+    const { data: transactions, error } = await supabase
+      .from('transactions')
+      .select('id, transaction_date, type, category, amount, vendor_name, branch')
+      .is('deleted_at', null)
+      .order('transaction_date', { ascending: false })
+      .limit(300);
+
+    if (error) throw error;
+
+    const dataContext = JSON.stringify(transactions || []);
+
     const systemPrompt = `You are a helpful business analytics assistant for restaurant and café owners in Indonesia.
-You help analyze sales data, expenses, and business metrics using natural language.
+You analyze the provided raw transaction data and answer the user's question.
 
-Database schema:
-- transactions (id, branch_id, vendor_id, transaction_date, total_amount, source, transaction_type)
-- transaction_items (id, transaction_id, item_name, category, quantity, unit_price, subtotal)
-- daily_sales (id, branch_id, sale_date, net_sales, total_transactions, dine_in_sales, takeaway_sales, online_sales, grabfood_sales, gofood_sales, shopee_food_sales)
-- branches (id, name, city, province)
-- vendors (id, name, category)
+Here is the raw data (JSON):
+${dataContext}
 
-Current context:
-- Branch IDs available to user: [${branchIds.join(', ')}]
-- Date range: ${dateRange.from} to ${dateRange.to}
-
-RULES (MUST FOLLOW):
-1. Generate ONLY SELECT queries. Never INSERT, UPDATE, DELETE, or DROP.
-2. Always filter: WHERE branch_id IN ([user's branch IDs])
-3. Always filter: AND [date_column] BETWEEN '[date_from]' AND '[date_to]'
-4. Always add: AND deleted_at IS NULL for transactions table
-5. Respond in the SAME LANGUAGE as the user's message (Indonesian or English)
-6. Return ONLY valid JSON (no markdown): { "sql": "...", "chart_type": "table|bar|line|pie|text", "explanation": "...[natural language answer]..." }`;
+RULES:
+1. Analyze the data to answer the user's question. 
+2. Determine if the answer is best represented as a "text", "table", "bar", "line", or "pie" chart.
+3. If a chart is appropriate, generate the 'results' array with objects having simple keys (e.g., 'kategori' and 'total').
+4. Respond in the SAME LANGUAGE as the user's message (Indonesian).
+5. Return ONLY valid JSON (no markdown wrapping).
+Format: { "chart_type": "table|bar|line|pie|text", "results": [{"label": "x", "value": 10}], "explanation": "...natural language answer..." }`;
 
     let aiResponseText = "";
-
+    
     try {
       if (!process.env.GEMINI_API_KEY) throw new Error("No Gemini API Key");
       
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
       
       const chat = model.startChat({
         history: [
           { role: 'user', parts: [{ text: systemPrompt }] },
-          { role: 'model', parts: [{ text: 'Understood. I will generate strictly JSON matching your rules.' }] },
-          ...conversationHistory.map((msg: any) => ({
-            role: msg.role === 'user' ? 'user' : 'model',
-            parts: [{ text: msg.content }]
-          }))
+          { role: 'model', parts: [{ text: '{"chart_type": "text", "results": [], "explanation": "Understood. I will analyze the data and return only JSON."}' }] }
         ]
       });
 
       const result = await chat.sendMessage(userMessage);
       aiResponseText = result.response.text();
     } catch (aiError) {
-      console.warn("Gemini API error, falling back to mock response:", aiError);
-      
-      // Fallback response for dev mode or rate limits
-      aiResponseText = JSON.stringify({
-        sql: "SELECT branch_id, SUM(total_amount) as total FROM transactions GROUP BY branch_id",
-        chart_type: userMessage.toLowerCase().includes('grafik') || userMessage.toLowerCase().includes('chart') ? "bar" : "table",
-        explanation: `Ini adalah ringkasan untuk pertanyaan Anda: "${userMessage}". (Mode Fallback karena API AI sedang limit). Data berikut menunjukkan total penjualan yang berhasil dianalisis.`
-      });
+      console.warn("Gemini API error:", aiError);
+      return NextResponse.json({ error: 'AI Error: Gagal menghubungi AI.' }, { status: 500 });
     }
 
     // Strip markdown JSON if any
     const cleanJson = aiResponseText.replace(/```json\n?|```/g, '').trim();
     const parsedData = JSON.parse(cleanJson);
 
-    // Validate SQL only contains SELECT
-    const queryUpper = parsedData.sql?.toUpperCase() || "";
-    if (queryUpper.includes('INSERT ') || queryUpper.includes('UPDATE ') || queryUpper.includes('DELETE ') || queryUpper.includes('DROP ')) {
-      return NextResponse.json({ error: 'Unsafe SQL query detected.' }, { status: 400 });
-    }
-
-    // Execute query via supabase RPC
-    let queryResults = [];
-    try {
-      if (parsedData.sql) {
-        const { data: rpcData, error: rpcError } = await supabase.rpc('execute_safe_query', { query: parsedData.sql });
-        if (rpcError) throw rpcError;
-        queryResults = rpcData;
-      }
-    } catch (rpcError) {
-      console.warn("RPC Error (execute_safe_query not found or failed), mocking data:", rpcError);
-      // Mock result
-      queryResults = [
-        { label: 'Cabang Sudirman', value: 12500000 },
-        { label: 'Cabang Kemang', value: 8500000 },
-        { label: 'Pusat Blok M', value: 15500000 }
-      ];
-    }
-
     return NextResponse.json({
-      query: parsedData.sql,
-      results: queryResults,
+      query: "Data analysis via AI context",
+      results: parsedData.results || [],
       chartType: parsedData.chart_type || "text",
       explanation: parsedData.explanation,
       timestamp: new Date().toISOString()

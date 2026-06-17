@@ -12,13 +12,16 @@ import { Trash2, Plus, AlertCircle, Check } from 'lucide-react';
 interface ExtractionResultProps {
   initialData: any;
   onCancel?: () => void;
+  source?: string;
 }
 
-export default function ExtractionResult({ initialData, onCancel }: ExtractionResultProps) {
+export default function ExtractionResult({ initialData, onCancel, source = 'Scanner' }: ExtractionResultProps) {
   const router = useRouter();
   const [data, setData] = useState({
     vendor_name: initialData?.vendor_name?.value || '',
     transaction_date: initialData?.transaction_date?.value || '',
+    category: 'Operasional',
+    branch: 'Pusat',
     total_amount: initialData?.total_amount?.value || 0,
     items: (initialData?.items || []).map((item: any, id: number) => ({
       id: id.toString(),
@@ -99,10 +102,10 @@ export default function ExtractionResult({ initialData, onCancel }: ExtractionRe
         transaction_date: data.transaction_date,
         amount: data.total_amount,
         type: 'Pengeluaran', // Default type for receipts
-        category: 'Operasional', // Default
-        branch: 'Pusat', // Default
+        category: data.category,
+        branch: data.branch,
         status: 'Verified',
-        source: 'Scanner',
+        source: source,
         items: data.items.map((item: any) => ({
           name: item.name,
           qty: Number(item.quantity) || 1,
@@ -136,7 +139,7 @@ export default function ExtractionResult({ initialData, onCancel }: ExtractionRe
   return (
     <Card className="bg-bg-card rounded-lg border border-border shadow-sm p-6">
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="space-y-2">
             <Label htmlFor="vendor_name" className="flex items-center">
               Nama Vendor / Toko
@@ -161,6 +164,31 @@ export default function ExtractionResult({ initialData, onCancel }: ExtractionRe
               value={data.transaction_date}
               onChange={(e) => setData({...data, transaction_date: e.target.value})}
               className={dateWarning ? 'border-danger focus-visible:ring-danger' : ''}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="category">Kategori</Label>
+            <select 
+              id="category" 
+              value={data.category}
+              onChange={(e) => setData({...data, category: e.target.value})}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="Operasional">Operasional</option>
+              <option value="Peralatan">Peralatan</option>
+              <option value="Bahan Baku">Bahan Baku</option>
+              <option value="Transportasi">Transportasi</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="branch">Cabang</Label>
+            <Input 
+              id="branch" 
+              placeholder="Contoh: Pusat, Cabang 1"
+              value={data.branch}
+              onChange={(e) => setData({...data, branch: e.target.value})}
             />
           </div>
         </div>

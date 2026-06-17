@@ -151,7 +151,7 @@ export default function CameraScanner() {
             <RefreshCw className="h-4 w-4" /> Scan Ulang
           </button>
         </div>
-        <ExtractionResult initialData={extractionResult} />
+        <ExtractionResult initialData={extractionResult} source="Kamera" />
       </div>
     );
   }

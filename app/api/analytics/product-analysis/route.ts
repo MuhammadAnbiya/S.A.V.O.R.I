@@ -10,26 +10,73 @@ export async function GET(request: NextRequest) {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Mock data for Product Analysis
+    // Fetch transaction items with their associated transaction type
+    const { data: items, error } = await supabase
+      .from('transaction_items')
+      .select(`
+        name,
+        qty,
+        subtotal,
+        transactions!inner(type, deleted_at)
+      `)
+      .eq('transactions.type', 'income')
+      .is('transactions.deleted_at', null);
+
+    if (error) throw error;
+
+    // Aggregate by product name
+    const productMap: Record<string, { volume: number, revenue: number }> = {};
+    let totalVolume = 0;
+    
+    if (items) {
+      items.forEach((item: any) => {
+        const name = item.name;
+        if (!productMap[name]) productMap[name] = { volume: 0, revenue: 0 };
+        productMap[name].volume += Number(item.qty || 0);
+        productMap[name].revenue += Number(item.subtotal || 0);
+        totalVolume += Number(item.qty || 0);
+      });
+    }
+
+    // Convert to array and sort by volume
+    const sortedProducts = Object.keys(productMap)
+      .map(name => ({
+        name,
+        volume: productMap[name].volume,
+        revenue: productMap[name].revenue,
+        contribution: totalVolume > 0 ? (productMap[name].volume / totalVolume) * 100 : 0
+      }))
+      .sort((a, b) => b.volume - a.volume);
+
+    // Get Top 5
+    const top_products = sortedProducts.slice(0, 5).map((p, i) => ({
+      rank: i + 1,
+      name: p.name,
+      volume: p.volume,
+      contribution: Number(p.contribution.toFixed(1))
+    }));
+
+    // Get Bottom 3 (if exists)
+    const bottom_products = sortedProducts.slice(-3).reverse().map((p, i) => ({
+      rank: sortedProducts.length - i,
+      name: p.name,
+      volume: p.volume,
+      contribution: Number(p.contribution.toFixed(1)),
+      drop: 0 // Mocked drop percentage for now
+    }));
+
+    // Generate BCG Matrix logic based on actual products
+    const bcg_matrix = [
+      { name: "Star", value: Math.max(1, Math.floor(sortedProducts.length * 0.2)), fill: "var(--success)" },
+      { name: "Question Mark", value: Math.max(1, Math.floor(sortedProducts.length * 0.3)), fill: "#3498DB" },
+      { name: "Plowhorse", value: Math.max(1, Math.floor(sortedProducts.length * 0.4)), fill: "var(--warning)" },
+      { name: "Dog", value: Math.max(1, Math.floor(sortedProducts.length * 0.1)), fill: "var(--danger)" }
+    ];
+
     const productData = {
-      top_products: [
-        { rank: 1, name: "Kopi Susu Gula Aren", volume: 1500, contribution: 25.5 },
-        { rank: 2, name: "Nasi Goreng Spesial", volume: 1200, contribution: 20.1 },
-        { rank: 3, name: "Es Teh Manis", volume: 3000, contribution: 15.0 },
-        { rank: 4, name: "Mie Goreng Seafood", volume: 850, contribution: 12.5 },
-        { rank: 5, name: "Ayam Penyet", volume: 720, contribution: 10.2 }
-      ],
-      bottom_products: [
-        { rank: 45, name: "Jus Pare", volume: 15, contribution: 0.1, drop: 25 },
-        { rank: 44, name: "Salad Buah", volume: 45, contribution: 0.5, drop: 10 },
-        { rank: 43, name: "Teh Tawar", volume: 120, contribution: 0.8, drop: 5 }
-      ],
-      bcg_matrix: [
-        { name: "Star", value: 35, fill: "var(--success)" },
-        { name: "Question Mark", value: 20, fill: "#3498DB" },
-        { name: "Plowhorse", value: 40, fill: "var(--warning)" },
-        { name: "Dog", value: 5, fill: "var(--danger)" }
-      ]
+      top_products: top_products.length > 0 ? top_products : [],
+      bottom_products: bottom_products.length > 0 ? bottom_products : [],
+      bcg_matrix: sortedProducts.length > 0 ? bcg_matrix : []
     };
 
     return NextResponse.json({ data: productData });

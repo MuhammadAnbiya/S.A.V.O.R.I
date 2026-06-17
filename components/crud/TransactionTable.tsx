@@ -7,16 +7,61 @@ import { Input } from "@/components/ui/input";
 import { Search, ChevronDown, ChevronUp, Edit3, Trash2, Eye } from "lucide-react";
 
 export default function TransactionTable({ transactions, onEdit, onDelete, onSelectionChange }: any) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOption, setSortOption] = useState('Tanggal (Terbaru)');
 
   const toggleExpand = (id: string) => {
-    setExpandedId(expandedId === id ? null : id);
+    setExpandedIds(prev => {
+      const newIds = new Set(prev);
+      if (newIds.has(id)) newIds.delete(id);
+      else newIds.add(id);
+      return newIds;
+    });
   };
+
+  const processedTransactions = React.useMemo(() => {
+    let result = [...transactions];
+    
+    // 1. Search & Auto Expand
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const newExpanded = new Set<string>();
+      
+      result = result.filter((t: any) => {
+        const itemMatch = t.items?.some((item: any) => (item.name?.toLowerCase() || '').includes(q));
+        if (itemMatch) {
+          newExpanded.add(t.id);
+        }
+        
+        return (t.vendor?.toLowerCase() || '').includes(q) || 
+               (t.category?.toLowerCase() || '').includes(q) ||
+               itemMatch;
+      });
+      
+      // Auto expand rows with item matches
+      setExpandedIds(newExpanded);
+    }
+
+    // 2. Sort
+    result.sort((a: any, b: any) => {
+      if (sortOption === 'Tanggal (Terbaru)') {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      } else if (sortOption === 'Vendor (A-Z)') {
+        return (a.vendor || '').localeCompare(b.vendor || '');
+      } else if (sortOption === 'Total (Tertinggi)') {
+        return Number(b.amount) - Number(a.amount);
+      }
+      return 0;
+    });
+
+    return result;
+  }, [transactions, searchQuery, sortOption]);
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      const allIds = new Set<string>(transactions.map((t: any) => t.id));
+      const allIds = new Set<string>(processedTransactions.map((t: any) => t.id));
       setSelectedIds(allIds);
       onSelectionChange(Array.from(allIds));
     } else {
@@ -38,11 +83,20 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
       <div className="p-4 border-b flex justify-between items-center bg-white">
         <div className="relative w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Cari vendor atau nama barang..." className="pl-9 bg-main border-none focus-visible:ring-1" />
+          <Input 
+            placeholder="Cari vendor atau nama barang..." 
+            className="pl-9 bg-white border-border shadow-sm rounded-full placeholder:text-gray-500 font-medium focus-visible:ring-primary focus-visible:ring-1" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
         <div className="flex items-center space-x-2 text-sm text-text-secondary">
           <span>Sort by:</span>
-          <select className="border-none bg-transparent font-medium text-text-primary focus:ring-0 cursor-pointer">
+          <select 
+            className="border-none bg-transparent font-medium text-text-primary focus:ring-0 cursor-pointer"
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+          >
             <option>Tanggal (Terbaru)</option>
             <option>Vendor (A-Z)</option>
             <option>Total (Tertinggi)</option>
@@ -71,9 +125,9 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {transactions.map((trx: any) => (
+            {processedTransactions.map((trx: any) => (
               <React.Fragment key={trx.id}>
-                <tr className={`hover:bg-main/30 transition-colors ${expandedId === trx.id ? 'bg-main/50' : ''}`}>
+                <tr className={`hover:bg-main/30 transition-colors ${expandedIds.has(trx.id) ? 'bg-main/50' : ''}`}>
                   <td className="px-4 py-3 text-center">
                     <input 
                       type="checkbox" 
@@ -83,8 +137,8 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
                     />
                   </td>
                   <td className="px-4 py-3 font-medium text-primary cursor-pointer flex items-center gap-1" onClick={() => toggleExpand(trx.id)}>
-                    {trx.id}
-                    {expandedId === trx.id ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    {trx.id.substring(0, 8)}...
+                    {expandedIds.has(trx.id) ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                   </td>
                   <td className="px-4 py-3">{trx.date}</td>
                   <td className="px-4 py-3 font-medium">{trx.vendor}</td>
@@ -111,7 +165,7 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
                   </td>
                 </tr>
                 
-                {expandedId === trx.id && (
+                {expandedIds.has(trx.id) && (
                   <tr className="bg-main/20">
                     <td colSpan={7} className="px-10 py-4 border-b">
                       <div className="bg-white p-4 rounded border shadow-sm">
@@ -159,7 +213,7 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
             <option>100</option>
           </select>
         </div>
-        <span>Menampilkan 1-5 dari {transactions.length} transaksi</span>
+        <span>Total {processedTransactions.length} transaksi ditemukan</span>
         <div className="flex gap-1">
           <Button variant="outline" size="sm" disabled className="bg-white">Sebelumnya</Button>
           <Button variant="outline" size="sm" className="bg-white">Selanjutnya</Button>
