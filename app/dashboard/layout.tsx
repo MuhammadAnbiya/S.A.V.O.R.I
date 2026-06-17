@@ -1,51 +1,228 @@
-import '../globals.css'; // Import the global CSS from the app directory
+'use client';
 
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import TalkToDataPanel from '@/components/chat/TalkToDataPanel';
+import {
+  LayoutDashboard,
+  Database,
+  Upload,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  Flame,
+  Scan,
+} from 'lucide-react';
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+const navItems = [
+  { href: '/dashboard/overview', label: 'Overview', icon: LayoutDashboard },
+  { href: '/dashboard/input-data', label: 'Input Data', icon: Upload },
+  { href: '/dashboard/database', label: 'Database', icon: Database },
+];
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
-    <div className="flex h-screen bg-main text-text-primary">
-      {/* Sidebar (Placeholder for now) */}
-      <aside className="w-64 bg-white border-r border-border hidden md:block">
-        <div className="p-4 border-b">
-          <h2 className="text-xl font-bold tracking-tight text-primary">S.A.V.O.R.I</h2>
+    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#faf9f5' }}>
+      {/* ── Dark Sidebar ────────────────────────────────────── */}
+      <aside
+        className="hidden md:flex flex-col flex-shrink-0 transition-all duration-300"
+        style={{
+          width: collapsed ? '72px' : '224px',
+          backgroundColor: '#181715',
+          borderRight: '1px solid rgba(255,255,255,0.06)',
+        }}
+      >
+        {/* Logo */}
+        <div
+          className="flex items-center gap-2.5 px-4 py-5 border-b"
+          style={{ borderColor: 'rgba(255,255,255,0.06)', minHeight: '64px' }}
+        >
+          {/* Spike mark – styled after Anthropic asterisk */}
+          <div
+            className="flex-shrink-0 flex items-center justify-center rounded-full"
+            style={{
+              width: 32,
+              height: 32,
+              backgroundColor: '#cc785c',
+              color: '#fff',
+              fontSize: '1rem',
+              fontWeight: 600,
+              fontFamily: 'var(--font-display, serif)',
+            }}
+          >
+            ✦
+          </div>
+          {!collapsed && (
+            <span
+              className="font-semibold tracking-tight"
+              style={{
+                color: '#faf9f5',
+                fontSize: '0.9375rem',
+                fontFamily: 'var(--font-sans, Inter, sans-serif)',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              S.A.V.O.R.I
+            </span>
+          )}
         </div>
-        <nav className="mt-6 space-y-2 px-2">
-          <a href="/dashboard/overview" className="block px-3 py-2 rounded-md text-sm font-medium hover:bg-main text-text-secondary hover:text-primary transition-colors">
-            Overview
-          </a>
-          <a href="/dashboard/input-data" className="block px-3 py-2 rounded-md text-sm font-medium hover:bg-main text-text-secondary hover:text-primary transition-colors">
-            Input Data
-          </a>
-          <a href="/dashboard/database" className="block px-3 py-2 rounded-md text-sm font-medium hover:bg-main text-text-secondary hover:text-primary transition-colors">
-            Database Transaksi
-          </a>
+
+        {/* Nav items */}
+        <nav className="flex-1 overflow-y-auto py-4 space-y-0.5 px-2">
+          {navItems.map(({ href, label, icon: Icon }) => {
+            const active = pathname.startsWith(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                title={collapsed ? label : undefined}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: collapsed ? 0 : '0.625rem',
+                  justifyContent: collapsed ? 'center' : 'flex-start',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  fontFamily: 'var(--font-sans, Inter, sans-serif)',
+                  color: active ? '#faf9f5' : '#a09d96',
+                  backgroundColor: active ? '#252320' : 'transparent',
+                  textDecoration: 'none',
+                  transition: 'background-color 150ms ease, color 150ms ease',
+                }}
+                onMouseEnter={e => {
+                  if (!active) {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = '#252320';
+                    (e.currentTarget as HTMLElement).style.color = '#faf9f5';
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!active) {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                    (e.currentTarget as HTMLElement).style.color = '#a09d96';
+                  }
+                }}
+              >
+                <Icon size={16} className="flex-shrink-0" />
+                {!collapsed && <span>{label}</span>}
+              </Link>
+            );
+          })}
         </nav>
+
+        {/* Collapse toggle */}
+        <div className="px-2 pb-4 pt-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+          <button
+            onClick={() => setCollapsed(v => !v)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              gap: '0.625rem',
+              width: '100%',
+              padding: '0.5rem 0.75rem',
+              borderRadius: '0.5rem',
+              border: 'none',
+              background: 'transparent',
+              color: '#a09d96',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              cursor: 'pointer',
+              transition: 'background-color 150ms ease, color 150ms ease',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.backgroundColor = '#252320';
+              (e.currentTarget as HTMLElement).style.color = '#faf9f5';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+              (e.currentTarget as HTMLElement).style.color = '#a09d96';
+            }}
+          >
+            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            {!collapsed && <span>Collapse</span>}
+          </button>
+
+          {/* Logout */}
+          <Link
+            href="/logout"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              gap: '0.625rem',
+              padding: '0.5rem 0.75rem',
+              borderRadius: '0.5rem',
+              color: '#a09d96',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              textDecoration: 'none',
+              transition: 'background-color 150ms ease, color 150ms ease',
+              marginTop: '0.25rem',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.backgroundColor = '#252320';
+              (e.currentTarget as HTMLElement).style.color = '#c64545';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+              (e.currentTarget as HTMLElement).style.color = '#a09d96';
+            }}
+          >
+            <LogOut size={16} />
+            {!collapsed && <span>Logout</span>}
+          </Link>
+        </div>
       </aside>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <header className="h-16 bg-white border-b border-border flex items-center px-4 text-sm z-10 shadow-sm">
-          <div className="flex-1 font-semibold text-text-primary">Dashboard</div>
-          <div className="flex items-center space-x-3">
-            <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center text-white font-bold">
+      {/* ── Main content ──────────────────────────────────── */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top bar */}
+        <header
+          className="flex-shrink-0 flex items-center justify-between px-6 z-10"
+          style={{
+            height: '64px',
+            backgroundColor: '#faf9f5',
+            borderBottom: '1px solid #e6dfd8',
+          }}
+        >
+          {/* Page breadcrumb — will show current route name */}
+          <div style={{ fontSize: '0.875rem', color: '#6c6a64', fontWeight: 500 }}>
+            {navItems.find(n => pathname.startsWith(n.href))?.label ?? 'Dashboard'}
+          </div>
+
+          {/* Right cluster */}
+          <div className="flex items-center gap-3">
+            {/* Avatar */}
+            <div
+              className="flex items-center justify-center rounded-full font-semibold text-sm"
+              style={{
+                width: 34,
+                height: 34,
+                backgroundColor: '#cc785c',
+                color: '#fff',
+              }}
+            >
               U
             </div>
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 p-6 overflow-y-auto">
+        {/* Page */}
+        <main
+          className="flex-1 overflow-y-auto"
+          style={{ padding: '1.5rem 1.5rem 6rem' }}
+        >
           {children}
         </main>
       </div>
 
-      {/* Talk to Data AI Panel */}
+      {/* Talk to Data floating panel */}
       <TalkToDataPanel />
     </div>
   );

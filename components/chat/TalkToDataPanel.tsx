@@ -1,44 +1,50 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { MessageSquare, Send, X, Loader2 } from "lucide-react";
-import ChatMessage from "./ChatMessage";
-import QuickPrompts from "./QuickPrompts";
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { MessageSquare, Send, X, Loader2, Sparkles } from 'lucide-react';
+import ChatMessage from './ChatMessage';
+import QuickPrompts from './QuickPrompts';
+
+const INITIAL_MESSAGE = {
+  id: 'welcome',
+  role: 'model',
+  content: 'Halo! Saya AI asisten SAVORI. Anda bisa bertanya apa saja tentang data penjualan, analisis produk, atau prediksi performa cabang.',
+  timestamp: new Date().toISOString(),
+};
 
 export default function TalkToDataPanel() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<any[]>([
-    {
-      id: 'welcome',
-      role: 'model',
-      content: 'Halo! Saya AI asisten SAVORI. Anda bisa bertanya apa saja tentang data penjualan, analisis produk, atau prediksi performa cabang.',
-      timestamp: new Date().toISOString()
-    }
-  ]);
+  const [messages, setMessages] = useState<any[]>([INITIAL_MESSAGE]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(scrollToBottom, 80);
+      setTimeout(() => inputRef.current?.focus(), 150);
+    }
+  }, [isOpen, scrollToBottom]);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isOpen]);
+  }, [messages, scrollToBottom]);
 
   const handleSend = async (text: string = inputValue) => {
-    if (!text.trim()) return;
+    const trimmed = text.trim();
+    if (!trimmed || isLoading) return;
 
     const userMsg = {
-      id: Date.now().toString(),
+      id: `u-${Date.now()}`,
       role: 'user',
-      content: text,
-      timestamp: new Date().toISOString()
+      content: trimmed,
+      timestamp: new Date().toISOString(),
     };
 
     setMessages(prev => [...prev, userMsg]);
@@ -50,108 +56,224 @@ export default function TalkToDataPanel() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userMessage: text,
-          branchIds: ['Sudirman', 'Kemang', 'Blok M'], // mock context
+          userMessage: trimmed,
+          branchIds: ['Sudirman', 'Kemang', 'Blok M'],
           dateRange: { from: '2026-06-01', to: '2026-06-30' },
-          conversationHistory: messages.filter(m => m.id !== 'welcome')
-        })
+          conversationHistory: messages.filter(m => m.id !== 'welcome').slice(-10),
+        }),
       });
 
       const result = await response.json();
-      
+
       const aiMsg = {
-        id: (Date.now() + 1).toString(),
+        id: `a-${Date.now()}`,
         role: 'model',
         content: result.explanation || 'Maaf, saya tidak dapat menganalisis data tersebut.',
-        chartType: result.chartType,
-        chartData: result.results,
-        timestamp: new Date().toISOString()
+        chartType: result.chartType || null,
+        chartData: Array.isArray(result.results) && result.results.length > 0 ? result.results : null,
+        timestamp: new Date().toISOString(),
       };
 
       setMessages(prev => [...prev, aiMsg]);
-    } catch (error) {
-      console.error(error);
+    } catch {
       setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
+        id: `err-${Date.now()}`,
         role: 'model',
-        content: 'Terjadi kesalahan saat memproses permintaan Anda.',
-        timestamp: new Date().toISOString()
+        content: 'Terjadi kesalahan saat memproses permintaan. Pastikan koneksi internet Anda stabil.',
+        timestamp: new Date().toISOString(),
       }]);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   return (
     <>
-      {/* Floating Action Button */}
-      {!isOpen && (
-        <button 
-          onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-xl flex items-center justify-center hover:scale-105 transition-transform z-50 animate-in zoom-in"
-        >
-          <MessageSquare className="w-6 h-6" />
-        </button>
-      )}
+      {/* ── Floating Action Button ─────────────────────────── */}
+      <button
+        onClick={() => setIsOpen(v => !v)}
+        aria-label="Talk to Data"
+        style={{
+          position: 'fixed',
+          bottom: '1.5rem',
+          right: '1.5rem',
+          width: '52px',
+          height: '52px',
+          borderRadius: '50%',
+          backgroundColor: '#cc785c',
+          color: '#ffffff',
+          border: 'none',
+          boxShadow: '0 4px 20px rgba(204,120,92,0.45)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          zIndex: 50,
+          transition: 'transform 150ms ease, background-color 150ms ease',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#a9583e')}
+        onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#cc785c')}
+      >
+        {isOpen
+          ? <X size={20} />
+          : <Sparkles size={20} />}
+      </button>
 
-      {/* Side Panel */}
+      {/* ── Side Panel ────────────────────────────────────── */}
       {isOpen && (
-        <Card className="fixed top-0 right-0 w-full md:w-[450px] h-full h-screen shadow-2xl border-l border-border flex flex-col z-50 rounded-none bg-main animate-in slide-in-from-right-full duration-300">
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            width: '100%',
+            maxWidth: '420px',
+            height: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            backgroundColor: '#faf9f5',
+            borderLeft: '1px solid #e6dfd8',
+            boxShadow: '-8px 0 32px rgba(20,20,19,0.1)',
+            zIndex: 49,
+          }}
+        >
           {/* Header */}
-          <div className="bg-white p-4 border-b flex justify-between items-center shadow-sm z-10">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                <span className="text-xl">✨</span>
+          <div
+            style={{
+              flexShrink: 0,
+              padding: '1rem 1.25rem',
+              backgroundColor: '#181715',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(204,120,92,0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.125rem',
+                }}
+              >
+                ✦
               </div>
               <div>
-                <h3 className="font-bold text-text-primary">Talk to Data</h3>
-                <p className="text-xs text-text-secondary">AI Business Analyst</p>
+                <p style={{ color: '#faf9f5', fontSize: '0.9375rem', fontWeight: 600, lineHeight: 1.2, fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
+                  Talk to Data
+                </p>
+                <p style={{ color: '#a09d96', fontSize: '0.75rem', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
+                  AI Business Analyst
+                </p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-text-secondary hover:text-primary rounded-full">
-              <X className="w-5 h-5" />
-            </Button>
+            <button
+              onClick={() => setIsOpen(false)}
+              style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', backgroundColor: 'rgba(255,255,255,0.06)', color: '#a09d96', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            >
+              <X size={16} />
+            </button>
           </div>
 
-          {/* Chat Area */}
-          <div className="flex-1 overflow-y-auto p-4 scroll-smooth">
-            {messages.map((msg) => (
+          {/* Chat area */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '1.25rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0',
+            }}
+          >
+            {messages.map(msg => (
               <ChatMessage key={msg.id} message={msg} />
             ))}
+
+            {/* Loading indicator */}
             {isLoading && (
-              <div className="flex items-center space-x-2 text-sm text-text-secondary mb-4 p-3 bg-white rounded-2xl rounded-bl-sm border w-fit">
-                <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                <span>Sedang menganalisis data...</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1rem', backgroundColor: '#ffffff', border: '1px solid #e6dfd8', borderRadius: '0.75rem', borderBottomLeftRadius: '0.25rem', width: 'fit-content', marginBottom: '1rem', boxShadow: '0 1px 4px rgba(20,20,19,0.06)' }}>
+                <Loader2 size={14} style={{ color: '#cc785c', animation: 'spin 1s linear infinite' }} />
+                <span style={{ fontSize: '0.875rem', color: '#6c6a64', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
+                  Sedang menganalisis data...
+                </span>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Area */}
-          <div className="bg-white p-4 border-t">
-            <QuickPrompts onSelect={(prompt) => handleSend(prompt)} />
-            <form 
-              onSubmit={(e) => { e.preventDefault(); handleSend(); }}
-              className="flex items-center gap-2 relative"
-            >
-              <Input 
+          {/* Input area */}
+          <div
+            style={{
+              flexShrink: 0,
+              padding: '0.875rem 1rem',
+              backgroundColor: '#ffffff',
+              borderTop: '1px solid #e6dfd8',
+            }}
+          >
+            <QuickPrompts onSelect={p => handleSend(p)} />
+
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input
+                ref={inputRef}
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Tanyakan performa bisnis..." 
-                className="pr-12 py-6 bg-main border-none focus-visible:ring-1 focus-visible:ring-primary rounded-full"
+                onChange={e => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Tanyakan performa bisnis..."
                 disabled={isLoading}
+                style={{
+                  flex: 1,
+                  height: '42px',
+                  paddingLeft: '1rem',
+                  paddingRight: '3rem',
+                  borderRadius: '9999px',
+                  border: '1px solid #e6dfd8',
+                  backgroundColor: '#faf9f5',
+                  color: '#141413',
+                  fontSize: '0.9375rem',
+                  fontFamily: 'var(--font-sans, Inter, sans-serif)',
+                  outline: 'none',
+                }}
+                onFocus={e => (e.target.style.borderColor = '#cc785c')}
+                onBlur={e => (e.target.style.borderColor = '#e6dfd8')}
               />
-              <Button 
-                type="submit" 
-                size="icon" 
+              <button
+                onClick={() => handleSend()}
                 disabled={!inputValue.trim() || isLoading}
-                className="absolute right-1.5 h-9 w-9 rounded-full bg-primary hover:bg-primary-hover text-white"
+                style={{
+                  position: 'absolute',
+                  right: '0.25rem',
+                  width: 34,
+                  height: 34,
+                  borderRadius: '50%',
+                  border: 'none',
+                  backgroundColor: (!inputValue.trim() || isLoading) ? '#e6dfd8' : '#cc785c',
+                  color: (!inputValue.trim() || isLoading) ? '#8e8b82' : '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: (!inputValue.trim() || isLoading) ? 'not-allowed' : 'pointer',
+                  transition: 'background-color 150ms ease',
+                }}
               >
-                <Send className="w-4 h-4" />
-              </Button>
-            </form>
+                <Send size={14} />
+              </button>
+            </div>
           </div>
-        </Card>
+        </div>
       )}
     </>
   );

@@ -15,22 +15,35 @@ export default function OverviewPage() {
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard Business Intelligence</h1>
-          <p className="text-sm text-text-secondary mt-1">
+          {/* Caption label — coral uppercase */}
+          <p style={{ fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#cc785c', marginBottom: '0.25rem', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
+            Business Intelligence
+          </p>
+          {/* Serif display headline */}
+          <h1 style={{ fontFamily: 'var(--font-display, "Cormorant Garamond", serif)', fontSize: '2.25rem', fontWeight: 400, lineHeight: 1.15, letterSpacing: '-0.02em', color: '#141413' }}>
+            Dashboard Overview
+          </h1>
+          <p style={{ fontSize: '0.9375rem', color: '#6c6a64', marginTop: '0.25rem', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
             Analisis komprehensif performa penjualan, outlet, dan produk S.A.V.O.R.I.
           </p>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <Button variant="outline" className="bg-white">
-            <CalendarIcon className="w-4 h-4 mr-2" /> Bulan Ini
-          </Button>
-          <Button variant="outline" className="bg-white">
-            <Filter className="w-4 h-4 mr-2" /> Filter
-          </Button>
-          <Button className="bg-primary hover:bg-primary-hover text-white">
-            <Download className="w-4 h-4 mr-2" /> Export Report
-          </Button>
+
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', height: '36px', padding: '0 0.875rem', borderRadius: '0.5rem', border: '1px solid #e6dfd8', backgroundColor: '#faf9f5', color: '#3d3d3a', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}
+          >
+            <CalendarIcon className="w-4 h-4" /> Bulan Ini
+          </button>
+          <button
+            style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', height: '36px', padding: '0 0.875rem', borderRadius: '0.5rem', border: '1px solid #e6dfd8', backgroundColor: '#faf9f5', color: '#3d3d3a', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}
+          >
+            <Filter className="w-4 h-4" /> Filter
+          </button>
+          <button
+            style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', height: '36px', padding: '0 0.875rem', borderRadius: '0.5rem', border: 'none', backgroundColor: '#cc785c', color: '#ffffff', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}
+          >
+            <Download className="w-4 h-4" /> Export
+          </button>
         </div>
       </div>
 

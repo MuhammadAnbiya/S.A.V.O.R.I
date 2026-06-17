@@ -1,20 +1,48 @@
 'use client';
 
-export default function QuickPrompts({ onSelect }: { onSelect: (prompt: string) => void }) {
-  const prompts = [
-    "Ringkasan penjualan minggu ini",
-    "Top 5 produk terlaris bulan lalu",
-    "Bandingkan cabang Sudirman vs Kemang",
-    "Prediksi pendapatan minggu depan"
-  ];
+const prompts = [
+  'Ringkasan penjualan minggu ini',
+  'Top 5 produk terlaris bulan lalu',
+  'Bandingkan cabang Sudirman vs Kemang',
+  'Prediksi pendapatan minggu depan',
+];
 
+export default function QuickPrompts({ onSelect }: { onSelect: (prompt: string) => void }) {
   return (
-    <div className="flex flex-wrap gap-2 mb-4">
-      {prompts.map((prompt, index) => (
+    <div
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '0.375rem',
+        marginBottom: '0.625rem',
+      }}
+    >
+      {prompts.map((prompt, i) => (
         <button
-          key={index}
+          key={i}
           onClick={() => onSelect(prompt)}
-          className="text-xs bg-main hover:bg-primary/10 hover:text-primary text-text-secondary px-3 py-1.5 rounded-full border border-transparent hover:border-primary/20 transition-colors text-left"
+          style={{
+            padding: '0.25rem 0.625rem',
+            borderRadius: '9999px',
+            border: '1px solid #e6dfd8',
+            backgroundColor: '#faf9f5',
+            color: '#cc785c',
+            fontSize: '0.75rem',
+            fontWeight: 500,
+            cursor: 'pointer',
+            fontFamily: 'var(--font-sans, Inter, sans-serif)',
+            transition: 'background-color 150ms ease, border-color 150ms ease',
+            textAlign: 'left',
+            lineHeight: 1.4,
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(204,120,92,0.08)';
+            (e.currentTarget as HTMLElement).style.borderColor = '#cc785c';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.backgroundColor = '#faf9f5';
+            (e.currentTarget as HTMLElement).style.borderColor = '#e6dfd8';
+          }}
         >
           {prompt}
         </button>
