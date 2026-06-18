@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Trash2, Plus, AlertCircle, Check } from 'lucide-react';
 
 interface ExtractionResultProps {
@@ -20,9 +21,10 @@ export default function ExtractionResult({ initialData, onCancel, source = 'Scan
   const [data, setData] = useState({
     vendor_name: initialData?.vendor_name?.value || '',
     transaction_date: initialData?.transaction_date?.value || '',
-    category: 'Operasional',
-    branch: 'Pusat',
-    payment_method: initialData?.payment_method || 'Cash',
+    category: initialData?.category?.value || initialData?.category || 'Operasional',
+    branch: initialData?.branch?.value || initialData?.branch || 'Pusat',
+    payment_method: initialData?.payment_method?.value || initialData?.payment_method || 'Cash',
+    notes: initialData?.notes?.value || initialData?.notes || '',
     total_amount: initialData?.total_amount?.value || 0,
     items: (initialData?.items || []).map((item: any, id: number) => ({
       id: id.toString(),
@@ -123,6 +125,7 @@ export default function ExtractionResult({ initialData, onCancel, source = 'Scan
         category: data.category,
         branch: data.branch,
         payment_method: data.payment_method,
+        notes: data.notes,
         status: 'Verified',
         source: source,
         items: finalItems,
@@ -161,7 +164,7 @@ export default function ExtractionResult({ initialData, onCancel, source = 'Scan
               id="vendor_name" 
               value={data.vendor_name}
               onChange={(e) => setData({...data, vendor_name: e.target.value})}
-              className={vendorWarning ? 'border-danger focus-visible:ring-danger' : ''}
+              className={`font-medium text-ink ${vendorWarning ? 'border-danger focus-visible:ring-danger' : ''}`}
             />
           </div>
           
@@ -175,7 +178,7 @@ export default function ExtractionResult({ initialData, onCancel, source = 'Scan
               type="date"
               value={data.transaction_date}
               onChange={(e) => setData({...data, transaction_date: e.target.value})}
-              className={dateWarning ? 'border-danger focus-visible:ring-danger' : ''}
+              className={`font-medium text-ink ${dateWarning ? 'border-danger focus-visible:ring-danger' : ''}`}
             />
           </div>
 
@@ -185,7 +188,7 @@ export default function ExtractionResult({ initialData, onCancel, source = 'Scan
               id="category" 
               value={data.category}
               onChange={(e) => setData({...data, category: e.target.value})}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-ink ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="Operasional">Operasional</option>
               <option value="Peralatan">Peralatan</option>
@@ -201,6 +204,7 @@ export default function ExtractionResult({ initialData, onCancel, source = 'Scan
               placeholder="Contoh: Pusat, Cabang 1"
               value={data.branch}
               onChange={(e) => setData({...data, branch: e.target.value})}
+              className="font-medium text-ink"
             />
           </div>
           
@@ -210,7 +214,7 @@ export default function ExtractionResult({ initialData, onCancel, source = 'Scan
               id="payment_method" 
               value={data.payment_method}
               onChange={(e) => setData({...data, payment_method: e.target.value})}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-ink ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <option value="Cash">Cash (Tunai)</option>
               <option value="QRIS">QRIS</option>
@@ -342,6 +346,17 @@ export default function ExtractionResult({ initialData, onCancel, source = 'Scan
               className={`text-lg font-bold text-right ${totalWarning ? 'border-danger focus-visible:ring-danger' : ''}`}
             />
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="notes">Catatan Tambahan</Label>
+          <Textarea 
+            id="notes" 
+            placeholder="Tambahkan catatan jika perlu..."
+            value={data.notes}
+            onChange={(e) => setData({...data, notes: e.target.value})}
+            className="font-medium text-ink min-h-[80px]"
+          />
         </div>
 
         <div className="flex justify-end space-x-4 pt-6">

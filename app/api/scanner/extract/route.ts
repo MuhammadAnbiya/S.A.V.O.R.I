@@ -55,7 +55,9 @@ Schema JSON:
       "subtotal": { "value": integer, "confidence": 0.0-1.0 }
     }
   ],
-  "total_amount": { "value": integer, "confidence": 0.0-1.0 }
+  "total_amount": { "value": integer, "confidence": 0.0-1.0 },
+  "payment_method": { "value": "Cash|QRIS|Transfer Bank|Kartu Kredit", "confidence": 0.0-1.0 },
+  "notes": { "value": "string (opsional catatan tambahan)", "confidence": 0.0-1.0 }
 }`;
 
     const response = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
@@ -134,6 +136,8 @@ interface SanitizedReceipt {
   transaction_date: SanitizedField<string>;
   items: SanitizedItem[];
   total_amount: SanitizedField<number>;
+  payment_method: SanitizedField<string>;
+  notes: SanitizedField<string>;
 }
 
 function extractVal(obj: unknown, fallback: unknown = ''): unknown {
@@ -220,10 +224,15 @@ function sanitizeReceiptData(raw: Record<string, unknown>): SanitizedReceipt {
     }
   }
 
+  const paymentMethod = String(extractVal(raw.payment_method, 'Cash')).trim();
+  const notes = String(extractVal(raw.notes, '')).trim();
+
   return {
     vendor_name: { value: vendorName, confidence: extractConf(vendorRaw) },
     transaction_date: { value: dateVal, confidence: extractConf(dateRaw) },
     items: sanitizedItems,
     total_amount: { value: totalVal, confidence: extractConf(raw.total_amount) },
+    payment_method: { value: paymentMethod, confidence: extractConf(raw.payment_method) },
+    notes: { value: notes, confidence: extractConf(raw.notes) },
   };
 }

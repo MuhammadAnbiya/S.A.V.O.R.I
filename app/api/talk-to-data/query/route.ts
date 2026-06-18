@@ -54,7 +54,7 @@ function buildContext(transactions: Transaction[]): string {
 }
 
 // ── Call Groq API ──────────────────────────────────────────────────
-async function queryGroq(userMessage: string, transactions: Transaction[], history: ChatMessage[]): Promise<string> {
+async function queryGroq(userMessage: string, transactions: Transaction[], history: ChatMessage[], mode: string = 'formal'): Promise<string> {
   const today = new Date().toLocaleDateString('id-ID', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
@@ -73,7 +73,7 @@ ATURAN KETAT:
 2. Jika tidak ada data yang cocok, katakan "Tidak ada data yang sesuai" — jangan coba menjawab dengan data lain.
 3. Untuk pertanyaan waktu ("minggu ini", "bulan ini"), filter tanggal dari data dengan benar. Minggu ini = Senin s.d. hari ini.
 4. Format Rupiah: Rp XX.XXX (titik pemisah ribuan).
-5. Jawab dalam Bahasa Indonesia, ringkas, dan informatif.
+5. ${mode === 'santai' ? 'Gunakan Bahasa Indonesia gaul/santai (pakai lu/gue atau bro/sis, asik, tidak kaku).' : 'Jawab dalam Bahasa Indonesia, formal, ringkas, dan profesional.'}
 6. Jangan gunakan format markdown (** atau #). Gunakan teks biasa dengan nomor atau bullet (•) untuk daftar.
 7. BERPIKIRLAH SEPERTI AKUNTAN: Jika ditanya total/jumlah, HITUNG DENGAN TELITI DARI DATA SECARA MATEMATIS — jangan pernah memperkirakan atau menebak. Lakukan pengecekan ganda secara internal sebelum menjawab.`;
 
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { userMessage, conversationHistory = [] } = await request.json();
+    const { userMessage, conversationHistory = [], mode = 'formal' } = await request.json();
 
     if (!userMessage?.trim()) {
       return NextResponse.json({ explanation: 'Silakan ketik pertanyaan Anda.' });
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
     // Try Groq LLM first (if key is configured)
     if (GROQ_API_KEY) {
       try {
-        answer = await queryGroq(userMessage, transactions || [], conversationHistory);
+        answer = await queryGroq(userMessage, transactions || [], conversationHistory, mode);
         console.log(`[Talk to Data] Groq LLM responded successfully`);
       } catch (groqErr) {
         const message = groqErr instanceof Error ? groqErr.message : String(groqErr);

@@ -62,6 +62,7 @@ Panduan:
    - Jika pengguna menyebut barang tapi tidak merinci harganya, coba bagi rata atau jika hanya ada 1 barang (misal: "makan siang abis 100 ribu"), masukkan "makan siang" dengan harga 100000. Jangan taruh angka 0 jika memungkinkan.
 6. "branch": Cabang tempat jika disebutkan (string), jika tidak ada kembalikan string kosong "".
 7. "payment_method": Metode pembayaran jika disebutkan (misal: "Cash", "QRIS", "DANA", "GoPay", "Transfer Bank"). Jika tidak disebutkan, kembalikan "Cash".
+8. "notes": Catatan atau alasan pembelian jika disebutkan (string). Jika tidak disebutkan, kembalikan string kosong "".
 
 Pastikan output HANYA berupa JSON tanpa markdown \`\`\`json, tanpa penjelasan apapun. Valid JSON object.`;
 
@@ -92,7 +93,7 @@ Pastikan output HANYA berupa JSON tanpa markdown \`\`\`json, tanpa penjelasan ap
         unit_price: { value: i.price || 0, confidence: 0.95 },
         subtotal: { value: i.price || 0, confidence: 0.95 }
       })),
-      notes: `Transkripsi: "${transcriptText}"`,
+      notes: (data.notes ? data.notes + '\\n\\n' : '') + `(Transkripsi Asli: "${transcriptText}")`,
       type: data.type || 'expense',
       category: data.category || 'Operasional',
       branch: data.branch || '',

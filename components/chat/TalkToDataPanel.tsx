@@ -17,6 +17,7 @@ export default function TalkToDataPanel() {
   const [messages, setMessages] = useState<any[]>([INITIAL_MESSAGE]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [mode, setMode] = useState<'formal' | 'santai'>('formal');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -57,7 +58,8 @@ export default function TalkToDataPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userMessage: trimmed,
-          branchIds: ['Sudirman', 'Kemang', 'Blok M'],
+          mode: mode,
+          branchIds: ['Pusat'],
           dateRange: { from: '2026-06-01', to: '2026-06-30' },
           conversationHistory: messages.filter(m => m.id !== 'welcome').slice(-10),
         }),
@@ -119,7 +121,7 @@ export default function TalkToDataPanel() {
             right: 0,
             width: '100%',
             maxWidth: '420px',
-            height: '100vh',
+            height: '100dvh',
             display: 'flex',
             flexDirection: 'column',
             backgroundColor: '#faf9f5',
@@ -159,9 +161,26 @@ export default function TalkToDataPanel() {
                 <p style={{ color: '#faf9f5', fontSize: '0.9375rem', fontWeight: 600, lineHeight: 1.2, fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
                   Talk to Data
                 </p>
-                <p style={{ color: '#a09d96', fontSize: '0.75rem', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
-                  AI Business Analyst
-                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <p style={{ color: '#a09d96', fontSize: '0.75rem', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
+                    AI Business Analyst
+                  </p>
+                  <button
+                    onClick={() => setMode(mode === 'formal' ? 'santai' : 'formal')}
+                    style={{
+                      background: mode === 'santai' ? '#cc785c' : 'rgba(255,255,255,0.1)',
+                      border: 'none',
+                      color: mode === 'santai' ? '#fff' : '#a09d96',
+                      fontSize: '0.65rem',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    {mode === 'formal' ? 'FORMAL' : 'SANTAI'}
+                  </button>
+                </div>
               </div>
             </div>
             <button
