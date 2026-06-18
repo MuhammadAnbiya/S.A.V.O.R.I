@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { UploadCloud, File, X, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ExtractionResult from './ExtractionResult';
+import { toast } from 'sonner';
 
 export default function FileUploader() {
   const [dragActive, setDragActive] = useState(false);
@@ -45,22 +46,17 @@ export default function FileUploader() {
 
   const handleFile = (file: File) => {
     setError(null);
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      setError('Format file tidak didukung. Harap upload gambar (JPG/PNG/WEBP) atau PDF.');
+      toast.error('Format file tidak didukung! Hanya mendukung gambar JPG, PNG, atau WEBP.');
+      setError('Format file tidak didukung. Harap upload gambar (JPG/PNG/WEBP).');
       return;
     }
     
-    // In a real implementation with batch support, this would be an array.
-    // For this implementation, we focus on 1 file for simplicity matching ExtractionResult.
     setSelectedFile(file);
     
-    if (file.type.startsWith('image/')) {
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-    } else {
-      setPreviewUrl(null); // It's a PDF
-    }
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
   };
 
   const removeFile = () => {
@@ -179,13 +175,13 @@ export default function FileUploader() {
             ref={inputRef}
             type="file"
             className="hidden"
-            accept="image/jpeg,image/png,image/webp,application/pdf"
+            accept="image/jpeg,image/png,image/webp"
             onChange={handleChange}
           />
           <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold mb-2">Klik atau Drag & Drop file ke sini</h3>
           <p className="text-sm text-muted-foreground">
-            Mendukung gambar (JPG, PNG, WEBP) dan dokumen PDF.
+            Mendukung gambar (JPG, PNG, WEBP).
           </p>
         </div>
       ) : (

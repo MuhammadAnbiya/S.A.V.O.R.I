@@ -4,7 +4,17 @@ import React, { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ChevronDown, ChevronUp, Edit3, Trash2, Eye } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Edit3, Trash2, Eye, Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function TransactionTable({ transactions, onEdit, onDelete, onSelectionChange }: any) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -13,6 +23,8 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
   const [sortOption, setSortOption] = useState('Tanggal (Terbaru)');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   React.useEffect(() => {
     setCurrentPage(1);
@@ -180,7 +192,7 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-text-secondary hover:text-accent" onClick={() => onEdit(trx)}>
                         <Edit3 className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-text-secondary hover:text-danger" onClick={() => onDelete(trx.id)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-text-secondary hover:text-danger" onClick={() => setDeleteTargetId(trx.id)}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
@@ -273,6 +285,46 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
           </Button>
         </div>
       </div>
+
+      <AlertDialog open={!!deleteTargetId} onOpenChange={(open) => { if (!open && !isDeleting) setDeleteTargetId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Hapus Transaksi</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan dan akan menghapus seluruh data transaksi beserta rincian item secara permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!deleteTargetId) return;
+                setIsDeleting(true);
+                try {
+                  await onDelete(deleteTargetId);
+                } catch (err) {
+                  console.error(err);
+                } finally {
+                  setIsDeleting(false);
+                  setDeleteTargetId(null);
+                }
+              }}
+              disabled={isDeleting}
+              className="bg-danger hover:bg-danger/90 text-white flex items-center justify-center"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Menghapus...
+                </>
+              ) : (
+                "Hapus"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

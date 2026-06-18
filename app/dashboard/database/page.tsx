@@ -57,12 +57,12 @@ export default function DatabasePage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) return;
     try {
       await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
       fetchTransactions();
     } catch (error) {
       console.error(error);
+      throw error;
     }
   };
 
