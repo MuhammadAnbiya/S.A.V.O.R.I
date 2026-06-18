@@ -57,12 +57,12 @@ Panduan:
 1. "vendor_name": Nama toko, tempat, atau orang (string).
 2. "total_amount": Total uang dalam bentuk angka (number).
 3. "type": "income" (pemasukan) atau "expense" (pengeluaran).
-4. "category": Kategori (misal: "Food & Beverage", "Transport", "Salary", dsb).
+4. "category": Pilih SALAH SATU dari kategori berikut: "Operasional", "Peralatan", "Bahan Baku", "Transportasi". Jika tidak pasti, pilih "Operasional".
 5. "items": array berisi barang yang disebut, format [{"name": "nama", "price": angka}]. 
    - Jika pengguna menyebut barang tapi tidak merinci harganya, coba bagi rata atau jika hanya ada 1 barang (misal: "makan siang abis 100 ribu"), masukkan "makan siang" dengan harga 100000. Jangan taruh angka 0 jika memungkinkan.
 6. "branch": Cabang tempat jika disebutkan (string), jika tidak ada kembalikan string kosong "".
 7. "payment_method": Metode pembayaran jika disebutkan (misal: "Cash", "QRIS", "DANA", "GoPay", "Transfer Bank"). Jika tidak disebutkan, kembalikan "Cash".
-8. "notes": Catatan atau alasan pembelian jika disebutkan (string). Jika tidak disebutkan, kembalikan string kosong "".
+8. "notes": Isi HANYA JIKA pengguna secara spesifik menyuruh "tambahkan catatan...", "di note...", atau menyebut konteks yang sangat penting selain transaksi. Jangan masukkan ulang seluruh ucapan. Jika tidak ada instruksi khusus, kosongkan "".
 
 Pastikan output HANYA berupa JSON tanpa markdown \`\`\`json, tanpa penjelasan apapun. Valid JSON object.`;
 
@@ -93,7 +93,7 @@ Pastikan output HANYA berupa JSON tanpa markdown \`\`\`json, tanpa penjelasan ap
         unit_price: { value: i.price || 0, confidence: 0.95 },
         subtotal: { value: i.price || 0, confidence: 0.95 }
       })),
-      notes: (data.notes ? data.notes + '\\n\\n' : '') + `(Transkripsi Asli: "${transcriptText}")`,
+      notes: data.notes || '',
       type: data.type || 'expense',
       category: data.category || 'Operasional',
       branch: data.branch || '',

@@ -202,8 +202,8 @@ export default function FileUploader() {
                 </div>
               )}
               <div className="overflow-hidden">
-                <p className="font-medium truncate">{selectedFile.name}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="font-semibold text-ink truncate">{selectedFile.name}</p>
+                <p className="text-sm font-medium text-text-secondary">
                   {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               </div>
@@ -219,7 +219,7 @@ export default function FileUploader() {
           <Button 
             onClick={processFile} 
             disabled={isProcessing} 
-            className="w-full bg-accent hover:opacity-90 text-white h-12 text-lg"
+            className="w-full bg-primary hover:bg-primary-hover text-white h-12 text-lg font-semibold"
           >
             {isProcessing ? (
               <><RefreshCw className="mr-2 h-5 w-5 animate-spin" /> Sedang Mengekstrak Data...</>

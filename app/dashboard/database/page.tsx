@@ -160,7 +160,8 @@ export default function DatabasePage() {
     document.body.removeChild(link);
   };
 
-  const uniqueBranches = Array.from(new Set(transactions.map(t => t.branch).filter(Boolean)));
+  // const uniqueBranches = Array.from(new Set(transactions.map(t => t.branch).filter(Boolean)));
+  const uniqueBranches = ['Pusat'];
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">

@@ -157,7 +157,7 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
                   <td className="px-4 py-3">{trx.date}</td>
                   <td className="px-4 py-3 font-medium">{trx.vendor}</td>
                   <td className="px-4 py-3">
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-main text-text-secondary border">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-main text-text-secondary border whitespace-nowrap inline-block">
                       {trx.category || 'Belum Kategori'}
                     </span>
                   </td>
@@ -165,7 +165,7 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
                     {trx.payment_method || 'Cash'}
                   </td>
                   <td className="px-4 py-3">
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-surface-soft text-text-secondary border border-border">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-surface-soft text-text-secondary border border-border whitespace-nowrap inline-block">
                       {trx.source || 'Manual'}
                     </span>
                   </td>
