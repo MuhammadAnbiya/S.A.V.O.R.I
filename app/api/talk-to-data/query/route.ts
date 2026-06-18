@@ -154,9 +154,15 @@ export async function POST(request: NextRequest) {
         console.log(`[Talk to Data] Groq LLM responded successfully`);
       } catch (groqErr) {
         const message = groqErr instanceof Error ? groqErr.message : String(groqErr);
-        console.warn('[Talk to Data] Groq failed, falling back to Smart Query Engine:', message);
-        // Fallback to rule-based engine
-        answer = processQuery(userMessage, transactions || []);
+        console.warn('[Talk to Data] Groq failed:', message);
+        
+        if (message.includes('Rate limit') || message.includes('429')) {
+          answer = "Maaf, sistem AI sedang menerima terlalu banyak permintaan (Rate Limit). Mohon tunggu sekitar 3-5 menit sebelum mencoba lagi. 🙏";
+        } else {
+          // Fallback to rule-based engine only for other errors
+          console.warn('[Talk to Data] Falling back to Smart Query Engine');
+          answer = processQuery(userMessage, transactions || []);
+        }
       }
     } else {
       // No LLM key — use rule-based engine

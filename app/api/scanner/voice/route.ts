@@ -58,8 +58,9 @@ Panduan:
 2. "total_amount": Total uang dalam bentuk angka (number).
 3. "type": "income" (pemasukan) atau "expense" (pengeluaran).
 4. "category": Pilih SALAH SATU dari kategori berikut: "Operasional", "Peralatan", "Bahan Baku", "Transportasi". Jika tidak pasti, pilih "Operasional".
-5. "items": array berisi barang, format [{"name": "nama barang", "qty": angka jumlah barang, "price": angka harga satuan}]. Wajib mendeteksi jumlah barang (qty) dari ucapan!
-   - Jika pengguna menyebut barang tapi tidak merinci harganya, coba bagi rata atau jika hanya ada 1 barang (misal: "makan siang abis 100 ribu"), masukkan "makan siang" dengan qty 1 dan price 100000. Jangan taruh angka 0 jika memungkinkan.
+5. "items": array berisi barang, format [{"name": "nama barang", "qty": angka jumlah barang, "price": angka harga satuan, "subtotal": angka total akhir untuk item ini}]. Wajib mendeteksi jumlah barang (qty)!
+   - Jika pengguna menyebut barang tapi tidak merinci harganya, bagi rata.
+   - PENTING UNTUK DISKON/PAJAK: Jika pengguna menyebut diskon atau total akhir yang berbeda dari (qty * price), hitung matematis dan masukkan hasil akhir ke "subtotal". Jika normal, subtotal = qty * price.
 7. "payment_method": Metode pembayaran jika disebutkan (misal: "Cash", "QRIS", "DANA", "GoPay", "Transfer Bank"). Jika tidak disebutkan, kembalikan "Cash".
 8. "notes": Ekstrak instruksi tambahan atau alasan pembelian (misal: "harus beli lagi 2 lusin besok", "buat stok gudang"). Tulis intinya saja dengan sangat ringkas. Jika tidak ada pesan tambahan, WAJIB isi dengan string kosong "".
 
@@ -85,13 +86,18 @@ Pastikan output HANYA berupa JSON tanpa markdown \`\`\`json, tanpa penjelasan ap
       vendor_name: { value: data.vendor_name || 'Tidak diketahui', confidence: 0.95 },
       transaction_date: { value: new Date().toISOString().split('T')[0], confidence: 0.99 },
       total_amount: { value: data.total_amount || 0, confidence: 0.95 },
-      items: (data.items || []).map((i: any) => ({
-        name: { value: i.name || 'Item Transaksi', confidence: 0.95 },
-        quantity: { value: Number(i.qty) || 1, confidence: 0.95 },
-        unit: { value: 'pcs', confidence: 0.95 },
-        unit_price: { value: Number(i.price) || 0, confidence: 0.95 },
-        subtotal: { value: (Number(i.qty) || 1) * (Number(i.price) || 0), confidence: 0.95 }
-      })),
+      items: (data.items || []).map((i: any) => {
+        const qty = Number(i.qty) || 1;
+        const price = Number(i.price) || 0;
+        const subtotal = i.subtotal !== undefined && i.subtotal !== null ? Number(i.subtotal) : qty * price;
+        return {
+          name: { value: i.name || 'Item Transaksi', confidence: 0.95 },
+          quantity: { value: qty, confidence: 0.95 },
+          unit: { value: 'pcs', confidence: 0.95 },
+          unit_price: { value: price, confidence: 0.95 },
+          subtotal: { value: subtotal, confidence: 0.95 }
+        };
+      }),
       notes: data.notes || '',
       type: data.type || 'expense',
       category: data.category || 'Operasional',
