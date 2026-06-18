@@ -100,11 +100,11 @@ export default function ExtractionResult({ initialData, onCancel, source = 'Scan
     setIsSubmitting(true);
     
     try {
-      // Recalculate all values at submit time to guarantee 100% arithmetic consistency
+      // Trust the values from the state because the user might have edited them or they include discounts
       const finalItems = data.items.map((item: any) => {
         const qty = Math.max(1, Math.round(Number(item.quantity) || 1));
         const price = Math.max(0, Math.round(Number(item.unit_price) || 0));
-        const subtotal = qty * price; // ALWAYS enforce arithmetic
+        const subtotal = Number(item.subtotal) || (qty * price); 
         return {
           name: String(item.name || '').trim(),
           qty,
@@ -115,7 +115,9 @@ export default function ExtractionResult({ initialData, onCancel, source = 'Scan
         };
       }).filter((item: any) => item.name.length > 0);
 
-      const finalTotal = finalItems.reduce((sum: number, item: any) => sum + item.subtotal, 0);
+      const computedItemsTotal = finalItems.reduce((sum: number, item: any) => sum + item.subtotal, 0);
+      // Trust the explicit total_amount field unless it's 0 or missing, then fallback to sum of items
+      const finalTotal = Number(data.total_amount) || computedItemsTotal;
 
       const payload = {
         vendor_name: data.vendor_name.trim(),

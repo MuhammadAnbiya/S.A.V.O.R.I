@@ -208,7 +208,7 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
                                   <td className="py-2">{item.name}</td>
                                   <td className="py-2 text-center">{item.qty} {item.unit}</td>
                                   <td className="py-2 text-right">Rp {item.price.toLocaleString('id-ID')}</td>
-                                  <td className="py-2 text-right font-medium">Rp {(item.qty * item.price).toLocaleString('id-ID')}</td>
+                                  <td className="py-2 text-right font-medium">Rp {(item.subtotal ?? (item.qty * item.price)).toLocaleString('id-ID')}</td>
                                 </tr>
                               ))}
                             </tbody>
