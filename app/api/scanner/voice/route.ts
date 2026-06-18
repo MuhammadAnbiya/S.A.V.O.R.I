@@ -55,13 +55,13 @@ Teks Ucapan:
 
 Panduan:
 1. "vendor_name": Nama toko, tempat, atau orang (string).
-2. "total_amount": Total uang dalam bentuk angka (number).
+2. "total_amount": Total uang dalam bentuk angka (number). WAJIB konversi kata "ribu" atau "juta" menjadi angka nol (misal: "16 ribu" -> 16000, "1 setengah juta" -> 1500000). Jangan pernah menaruh "16" jika maksudnya 16 ribu!
 3. "type": "income" (pemasukan) atau "expense" (pengeluaran).
-4. "category": Pilih SALAH SATU dari kategori berikut: "Operasional", "Peralatan", "Bahan Baku", "Transportasi". Jika tidak pasti, pilih "Operasional".
+4. "category": Pilih SALAH SATU dari: "Operasional", "Peralatan", "Bahan Baku", "Transportasi". Jika ragu, "Operasional".
 5. "items": array berisi barang, format [{"name": "nama barang", "qty": angka jumlah barang, "price": angka harga satuan, "subtotal": angka total akhir untuk item ini}]. Wajib mendeteksi jumlah barang (qty)!
    - Jika pengguna menyebut barang tapi tidak merinci harganya, bagi rata.
-   - PENTING UNTUK DISKON/PAJAK: Jika pengguna menyebut diskon atau total akhir yang berbeda dari (qty * price), hitung matematis dan masukkan hasil akhir ke "subtotal". Jika normal, subtotal = qty * price.
-7. "payment_method": Metode pembayaran jika disebutkan (misal: "Cash", "QRIS", "DANA", "GoPay", "Transfer Bank"). Jika tidak disebutkan, kembalikan "Cash".
+   - PENTING UNTUK DISKON/PAJAK: Jika pengguna menyebut diskon atau total akhir yang berbeda dari (qty * price), hitung matematis dan masukkan hasil akhir ke "subtotal". (Ingat: Konversi "ribu" ke 000).
+7. "payment_method": DENGARKAN BAIK-BAIK METODE PEMBAYARANNYA (misal: "QRIS", "Transfer Bank", "BCA", "DANA", "Cash"). Jika disebutkan QRIS/Dana/Bank, WAJIB tulis itu. HANYA tulis "Cash" jika benar-benar tidak ada indikasi apapun.
 8. "notes": Ekstrak instruksi tambahan atau alasan pembelian (misal: "harus beli lagi 2 lusin besok", "buat stok gudang"). Tulis intinya saja dengan sangat ringkas. Jika tidak ada pesan tambahan, WAJIB isi dengan string kosong "".
 
 Pastikan output HANYA berupa JSON tanpa markdown \`\`\`json, tanpa penjelasan apapun. Valid JSON object.`;
