@@ -97,9 +97,16 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-8">
         <div style={{ width: '100%', maxWidth: '400px' }}>
           {/* Mobile logo */}
-          <div className="flex items-center gap-2 mb-10 lg:hidden">
-            <div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: '#cc785c', display: 'flex', alignItems: 'center', justifyItems: 'center', color: '#fff', fontSize: '0.875rem' }}>✦</div>
-            <span style={{ fontWeight: 600, color: '#141413', fontSize: '0.9375rem' }}>S.A.V.O.R.I</span>
+          <div className="flex items-center gap-2.5 mb-10 lg:hidden">
+            <div
+              className="flex items-center justify-center rounded-full text-white"
+              style={{ width: 28, height: 28, backgroundColor: '#cc785c', fontSize: '0.8125rem' }}
+            >
+              ✦
+            </div>
+            <span style={{ fontWeight: 600, color: '#141413', fontSize: '0.9375rem', fontFamily: 'var(--font-sans, Inter, sans-serif)', letterSpacing: '-0.01em' }}>
+              S.A.V.O.R.I
+            </span>
           </div>
 
           {/* Label */}
