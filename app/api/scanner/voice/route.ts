@@ -61,7 +61,7 @@ Panduan:
 5. "items": array berisi barang, format [{"name": "nama barang", "qty": angka jumlah barang, "price": angka harga satuan}]. Wajib mendeteksi jumlah barang (qty) dari ucapan!
    - Jika pengguna menyebut barang tapi tidak merinci harganya, coba bagi rata atau jika hanya ada 1 barang (misal: "makan siang abis 100 ribu"), masukkan "makan siang" dengan qty 1 dan price 100000. Jangan taruh angka 0 jika memungkinkan.
 7. "payment_method": Metode pembayaran jika disebutkan (misal: "Cash", "QRIS", "DANA", "GoPay", "Transfer Bank"). Jika tidak disebutkan, kembalikan "Cash".
-8. "notes": Isi HANYA JIKA pengguna secara spesifik menyuruh "tambahkan catatan...", "di note...", atau menyebut konteks yang sangat penting selain transaksi. Jangan masukkan ulang seluruh ucapan. Jika tidak ada instruksi khusus, kosongkan "".
+8. "notes": Ekstrak instruksi tambahan atau alasan pembelian (misal: "harus beli lagi 2 lusin besok", "buat stok gudang"). Tulis intinya saja dengan sangat ringkas. Jika tidak ada pesan tambahan, WAJIB isi dengan string kosong "".
 
 Pastikan output HANYA berupa JSON tanpa markdown \`\`\`json, tanpa penjelasan apapun. Valid JSON object.`;
 
