@@ -7,7 +7,7 @@ import { processQuery } from '@/lib/smart-query-engine';
 // Daftar gratis di https://console.groq.com → dapat API key seketika
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
-const GROQ_MODEL = 'llama-3.3-70b-versatile'; // Model 70B sangat cerdas, cocok untuk penalaran analitik
+const GROQ_MODEL = 'llama3-8b-8192'; // Menggunakan 8B untuk menghindari rate limit saat testing
 
 interface TransactionItem {
   name: string;
