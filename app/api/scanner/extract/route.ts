@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
-const GROQ_MODEL = 'llama-3.1-8b-instant'; // Menggunakan 8B untuk menghindari rate limit saat testing
+const GROQ_MODEL = 'llama-3.3-70b-versatile'; // KEMBALI KE 70B: Model kecil (8B) terlalu bodoh untuk ekstraksi data kompleks
 
 export async function POST(request: NextRequest) {
   try {
