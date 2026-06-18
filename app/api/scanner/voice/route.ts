@@ -58,9 +58,8 @@ Panduan:
 2. "total_amount": Total uang dalam bentuk angka (number).
 3. "type": "income" (pemasukan) atau "expense" (pengeluaran).
 4. "category": Pilih SALAH SATU dari kategori berikut: "Operasional", "Peralatan", "Bahan Baku", "Transportasi". Jika tidak pasti, pilih "Operasional".
-5. "items": array berisi barang yang disebut, format [{"name": "nama", "price": angka}]. 
-   - Jika pengguna menyebut barang tapi tidak merinci harganya, coba bagi rata atau jika hanya ada 1 barang (misal: "makan siang abis 100 ribu"), masukkan "makan siang" dengan harga 100000. Jangan taruh angka 0 jika memungkinkan.
-6. "branch": Cabang tempat jika disebutkan (string), jika tidak ada kembalikan string kosong "".
+5. "items": array berisi barang, format [{"name": "nama barang", "qty": angka jumlah barang, "price": angka harga satuan}]. Wajib mendeteksi jumlah barang (qty) dari ucapan!
+   - Jika pengguna menyebut barang tapi tidak merinci harganya, coba bagi rata atau jika hanya ada 1 barang (misal: "makan siang abis 100 ribu"), masukkan "makan siang" dengan qty 1 dan price 100000. Jangan taruh angka 0 jika memungkinkan.
 7. "payment_method": Metode pembayaran jika disebutkan (misal: "Cash", "QRIS", "DANA", "GoPay", "Transfer Bank"). Jika tidak disebutkan, kembalikan "Cash".
 8. "notes": Isi HANYA JIKA pengguna secara spesifik menyuruh "tambahkan catatan...", "di note...", atau menyebut konteks yang sangat penting selain transaksi. Jangan masukkan ulang seluruh ucapan. Jika tidak ada instruksi khusus, kosongkan "".
 
@@ -88,15 +87,15 @@ Pastikan output HANYA berupa JSON tanpa markdown \`\`\`json, tanpa penjelasan ap
       total_amount: { value: data.total_amount || 0, confidence: 0.95 },
       items: (data.items || []).map((i: any) => ({
         name: { value: i.name || 'Item Transaksi', confidence: 0.95 },
-        quantity: { value: 1, confidence: 0.95 },
+        quantity: { value: Number(i.qty) || 1, confidence: 0.95 },
         unit: { value: 'pcs', confidence: 0.95 },
-        unit_price: { value: i.price || 0, confidence: 0.95 },
-        subtotal: { value: i.price || 0, confidence: 0.95 }
+        unit_price: { value: Number(i.price) || 0, confidence: 0.95 },
+        subtotal: { value: (Number(i.qty) || 1) * (Number(i.price) || 0), confidence: 0.95 }
       })),
       notes: data.notes || '',
       type: data.type || 'expense',
       category: data.category || 'Operasional',
-      branch: data.branch || '',
+      branch: 'Pusat',
       payment_method: data.payment_method || 'Cash',
     };
 
