@@ -74,6 +74,7 @@ export default function TalkToDataPanel() {
         chartType: result.chartType || null,
         chartData: Array.isArray(result.results) && result.results.length > 0 ? result.results : null,
         timestamp: new Date().toISOString(),
+        mode: result.mode,
       };
 
       setMessages(prev => [...prev, aiMsg]);

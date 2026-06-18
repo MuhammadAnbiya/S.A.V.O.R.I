@@ -54,19 +54,40 @@ export default function ChatMessage({ message }: { message: any }) {
         )}
       </div>
 
-      {/* Timestamp */}
-      <span
+      {/* Footer (Timestamp & Mode Badge) */}
+      <div
         style={{
-          fontSize: '0.6875rem',
-          color: '#8e8b82',
-          marginTop: '0.25rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          marginTop: '0.35rem',
           marginLeft: isUser ? 0 : '0.25rem',
           marginRight: isUser ? '0.25rem' : 0,
           fontFamily: 'var(--font-sans, Inter, sans-serif)',
+          flexDirection: isUser ? 'row-reverse' : 'row',
         }}
       >
-        {new Date(message.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-      </span>
+        <span style={{ fontSize: '0.6875rem', color: '#8e8b82' }}>
+          {new Date(message.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+        </span>
+        
+        {!isUser && message.mode && (
+          <span 
+            style={{ 
+              fontSize: '0.6rem', 
+              padding: '2px 6px', 
+              borderRadius: '4px', 
+              backgroundColor: message.mode === 'santai' ? '#e0f2fe' : '#f3e8ff', 
+              color: message.mode === 'santai' ? '#0369a1' : '#7e22ce', 
+              fontWeight: 600, 
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}
+          >
+            {message.mode}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

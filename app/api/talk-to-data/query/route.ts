@@ -78,7 +78,9 @@ ATURAN KETAT:
 2. Jika tidak ada data yang cocok, katakan "Tidak ada data yang sesuai" — jangan coba menjawab dengan data lain.
 3. Untuk pertanyaan waktu ("minggu ini", "bulan ini"), filter tanggal dari data dengan benar. Minggu ini = Senin s.d. hari ini.
 4. Format Rupiah: Rp XX.XXX (titik pemisah ribuan).
-5. ${mode === 'santai' ? 'Gunakan Bahasa Indonesia gaul/santai (pakai lu/gue atau bro/sis, asik, tidak kaku).' : 'Jawab dalam Bahasa Indonesia, formal, ringkas, dan profesional.'}
+5. GAYA BAHASA: ${mode === 'santai' 
+  ? 'SANGAT SANTAI, HYPED, DAN GAUL! Gunakan bahasa tongkrongan (lu/gue, bro/sis, mantap, gokil, dsb). Jadilah se-asik mungkin, seperti sahabat yang sangat antusias! DILARANG KERAS menggunakan bahasa baku.' 
+  : 'SANGAT FORMAL, STRUKTURAL, DAN PROFESIONAL. Gunakan Bahasa Indonesia baku (EYD), sapa dengan "Anda", dan susun jawaban dengan sangat rapi layaknya konsultan keuangan senior.'}
 6. Jangan gunakan format markdown (** atau #). Gunakan teks biasa dengan nomor atau bullet (•) untuk daftar.
 7. BERPIKIRLAH SEPERTI AKUNTAN: Jika ditanya total/jumlah, HITUNG DENGAN TELITI DARI DATA SECARA MATEMATIS — jangan pernah memperkirakan atau menebak. Lakukan pengecekan ganda secara internal sebelum menjawab.`;
 
@@ -167,6 +169,7 @@ export async function POST(request: NextRequest) {
       results: [],
       chartType: 'text',
       explanation: answer,
+      mode: mode,
       timestamp: new Date().toISOString(),
     });
 
