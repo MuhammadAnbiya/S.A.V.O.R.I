@@ -24,6 +24,8 @@ interface Transaction {
   amount: number;
   vendor_name: string | null;
   branch: string | null;
+  payment_method: string | null;
+  notes: string | null;
   items?: TransactionItem[];
 }
 
@@ -47,7 +49,10 @@ function buildContext(transactions: Transaction[]): string {
     const itemList = t.items && t.items.length > 0
       ? t.items.map((item) => `${item.name} (${item.qty}x Rp${item.price})`).join(', ')
       : '-';
-    return `- ${date} | Vendor: ${t.vendor_name || '-'} | Kategori: ${t.category || '-'} | Cabang: ${t.branch || '-'} | Total: Rp${t.amount} | Items: [${itemList}]`;
+    
+    let line = `- ${date} | Vendor: ${t.vendor_name || '-'} | Kategori: ${t.category || '-'} | Metode: ${t.payment_method || '-'} | Cabang: ${t.branch || '-'} | Total: Rp${t.amount} | Items: [${itemList}]`;
+    if (t.notes) line += ` | Catatan: ${t.notes}`;
+    return line;
   });
 
   return lines.join('\n');
@@ -128,7 +133,7 @@ export async function POST(request: NextRequest) {
     const { data: transactions, error } = await supabase
       .from('transactions')
       .select(`
-        id, transaction_date, type, category, amount, vendor_name, branch,
+        id, transaction_date, type, category, amount, vendor_name, branch, payment_method, notes,
         items:transaction_items(name, qty, price, subtotal)
       `)
       .eq('user_id', session.user.id)

@@ -216,6 +216,13 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
                         ) : (
                           <p className="text-sm text-text-secondary italic">Tidak ada rincian item.</p>
                         )}
+                        
+                        {trx.notes && (
+                          <div className="mt-4 pt-3 border-t border-border/50">
+                            <h4 className="text-xs font-bold text-text-secondary uppercase mb-1">Catatan Tambahan</h4>
+                            <p className="text-sm text-ink bg-main/50 p-3 rounded">{trx.notes}</p>
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>
