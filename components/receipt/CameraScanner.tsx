@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Camera, RefreshCw, AlertCircle, ShieldAlert, VideoOff } from 'lucide-react';
 import ExtractionResult from './ExtractionResult';
 import { toast } from 'sonner';
+import LoadingTextRotator from './LoadingTextRotator';
 
 type CameraState = 'idle' | 'requesting' | 'active' | 'denied' | 'unavailable' | 'processing';
 
@@ -218,7 +219,16 @@ export default function CameraScanner() {
         {cameraState === 'processing' && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(24,23,21,0.9)', gap: '1rem' }}>
             <RefreshCw style={{ width: 36, height: 36, color: '#cc785c', animation: 'spin 1s linear infinite' }} />
-            <p style={{ color: '#faf9f5', fontSize: '0.9375rem', fontWeight: 500, fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>Memproses Struk...</p>
+            <p style={{ color: '#faf9f5', fontSize: '0.9375rem', fontWeight: 500, fontFamily: 'var(--font-sans, Inter, sans-serif)', textAlign: 'center', padding: '0 1rem' }}>
+              <LoadingTextRotator 
+                texts={[
+                  "Uploading transaction artifact...",
+                  "Analyzing layout with Qwen VL...",
+                  "Parsing itemized line details...",
+                  "Categorizing financial data..."
+                ]} 
+              />
+            </p>
             <p style={{ color: '#a09d96', fontSize: '0.8125rem', textAlign: 'center', maxWidth: 260, fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
               AI sedang mengenali vendor, item, dan total transaksi
             </p>

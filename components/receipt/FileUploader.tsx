@@ -7,6 +7,7 @@ import { UploadCloud, File, X, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ExtractionResult from './ExtractionResult';
 import { toast } from 'sonner';
+import LoadingTextRotator from './LoadingTextRotator';
 
 export default function FileUploader() {
   const [dragActive, setDragActive] = useState(false);
@@ -215,10 +216,20 @@ export default function FileUploader() {
           <Button 
             onClick={processFile} 
             disabled={isProcessing} 
-            className="w-full bg-primary hover:bg-primary-hover text-white h-12 text-lg font-semibold"
+            className="w-full bg-primary hover:bg-primary-hover text-white h-12 text-lg font-semibold flex items-center justify-center gap-2"
           >
             {isProcessing ? (
-              <><RefreshCw className="mr-2 h-5 w-5 animate-spin" /> Sedang Mengekstrak Data...</>
+              <>
+                <RefreshCw className="h-5 w-5 animate-spin flex-shrink-0" />
+                <LoadingTextRotator 
+                  texts={[
+                    "Uploading transaction artifact...",
+                    "Analyzing layout with Qwen VL...",
+                    "Parsing itemized line details...",
+                    "Categorizing financial data..."
+                  ]} 
+                />
+              </>
             ) : (
               'Ekstrak Data Struk'
             )}

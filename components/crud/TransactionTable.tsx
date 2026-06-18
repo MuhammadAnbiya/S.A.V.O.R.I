@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ChevronDown, ChevronUp, Edit3, Trash2, Eye, Loader2 } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Edit3, Trash2, Eye, Loader2, FileQuestion, XCircle, Plus } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +16,49 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+function EmptyState({ scenario, onClearFilters }: { scenario: 'no-data' | 'no-results'; onClearFilters?: () => void }) {
+  const router = useRouter();
+
+  return (
+    <div className="flex flex-col items-center justify-center p-8 text-center min-h-[350px] bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-lg border border-dashed border-gray-300 shadow-inner">
+      <div className="relative mb-5 flex items-center justify-center w-16 h-16 rounded-full bg-[#1e1e1e] shadow-lg border border-white/10 backdrop-blur-md">
+        <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#cc785c]/30 to-transparent animate-pulse" />
+        {scenario === 'no-data' ? (
+          <FileQuestion className="w-8 h-8 text-[#cc785c]" />
+        ) : (
+          <XCircle className="w-8 h-8 text-[#cc785c]" />
+        )}
+      </div>
+
+      <h3 className="text-lg font-bold text-[#141413] mb-1">
+        {scenario === 'no-data' ? 'No transactions recorded yet' : 'No transactions match your current filters'}
+      </h3>
+      <p className="text-xs text-text-secondary max-w-sm mb-6">
+        {scenario === 'no-data'
+          ? 'Mulai kelola keuangan usaha Anda dengan mencatat transaksi pertama hari ini.'
+          : 'Coba ubah kata kunci pencarian Anda atau hapus filter untuk melihat semua daftar transaksi.'}
+      </p>
+
+      {scenario === 'no-data' ? (
+        <Button 
+          onClick={() => router.push('/dashboard/input-data')}
+          className="bg-[#cc785c] hover:bg-[#b5654a] text-white shadow-md shadow-[#cc785c]/20 px-5 py-2 rounded-full font-medium transition-all duration-300 hover:scale-[1.02] flex items-center gap-1.5"
+        >
+          <Plus className="w-4 h-4" />
+          Input Transaksi Baru
+        </Button>
+      ) : (
+        <Button 
+          onClick={onClearFilters}
+          variant="outline"
+          className="border-[#cc785c] text-[#cc785c] hover:bg-[#cc785c]/10 bg-white px-5 py-2 rounded-full font-medium transition-all duration-300 flex items-center gap-1.5"
+        >
+          Clear Active Filters
+        </Button>
+      )}
+    </div>
+  );
+}
 
 export default function TransactionTable({ transactions, onEdit, onDelete, onSelectionChange }: any) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -151,96 +195,107 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {paginatedTransactions.map((trx: any) => (
-              <React.Fragment key={trx.id}>
-                <tr className={`hover:bg-main/30 transition-colors ${expandedIds.has(trx.id) ? 'bg-main/50' : ''}`}>
-                  <td className="px-4 py-3 text-center">
-                    <input 
-                      type="checkbox" 
-                      className="rounded border-gray-300" 
-                      checked={selectedIds.has(trx.id)}
-                      onChange={(e) => handleSelect(trx.id, e.target.checked)}
-                    />
-                  </td>
-                  <td className="px-4 py-3 font-medium text-primary cursor-pointer flex items-center gap-1" onClick={() => toggleExpand(trx.id)}>
-                    {trx.id.substring(0, 8)}...
-                    {expandedIds.has(trx.id) ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                  </td>
-                  <td className="px-4 py-3">{trx.date}</td>
-                  <td className="px-4 py-3 font-medium">{trx.vendor}</td>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-main text-text-secondary border whitespace-nowrap inline-block">
-                      {trx.category || 'Belum Kategori'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {trx.payment_method || 'Cash'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-surface-soft text-text-secondary border border-border whitespace-nowrap inline-block">
-                      {trx.source || 'Manual'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right font-bold">
-                    {trx.amount.toLocaleString('id-ID')}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-center space-x-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-text-secondary hover:text-primary" onClick={() => toggleExpand(trx.id)}>
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-text-secondary hover:text-accent" onClick={() => onEdit(trx)}>
-                        <Edit3 className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-text-secondary hover:text-danger" onClick={() => setDeleteTargetId(trx.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-                
-                {expandedIds.has(trx.id) && (
-                  <tr className="bg-main/20">
-                    <td colSpan={9} className="px-10 py-4 border-b">
-                      <div className="bg-white p-4 rounded border shadow-sm">
-                        <h4 className="text-xs font-bold text-text-secondary uppercase mb-2 border-b pb-2">Detail Item</h4>
-                        {trx.items && trx.items.length > 0 ? (
-                          <table className="w-full text-xs">
-                            <thead>
-                              <tr className="text-text-secondary">
-                                <th className="text-left py-1">Nama Barang</th>
-                                <th className="text-center py-1">Qty</th>
-                                <th className="text-right py-1">Harga Satuan</th>
-                                <th className="text-right py-1">Subtotal</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {trx.items.map((item: any, i: number) => (
-                                <tr key={i} className="border-t border-border/50">
-                                  <td className="py-2">{item.name}</td>
-                                  <td className="py-2 text-center">{item.qty} {item.unit}</td>
-                                  <td className="py-2 text-right">Rp {item.price.toLocaleString('id-ID')}</td>
-                                  <td className="py-2 text-right font-medium">Rp {(item.subtotal ?? (item.qty * item.price)).toLocaleString('id-ID')}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        ) : (
-                          <p className="text-sm text-text-secondary italic">Tidak ada rincian item.</p>
-                        )}
-                        
-                        {trx.notes && (
-                          <div className="mt-4 pt-3 border-t border-border/50">
-                            <h4 className="text-xs font-bold text-text-secondary uppercase mb-1">Catatan Tambahan</h4>
-                            <p className="text-sm text-ink bg-main/50 p-3 rounded">{trx.notes}</p>
-                          </div>
-                        )}
+            {paginatedTransactions.length > 0 ? (
+              paginatedTransactions.map((trx: any) => (
+                <React.Fragment key={trx.id}>
+                  <tr className={`hover:bg-main/30 transition-colors ${expandedIds.has(trx.id) ? 'bg-main/50' : ''}`}>
+                    <td className="px-4 py-3 text-center">
+                      <input 
+                        type="checkbox" 
+                        className="rounded border-gray-300" 
+                        checked={selectedIds.has(trx.id)}
+                        onChange={(e) => handleSelect(trx.id, e.target.checked)}
+                      />
+                    </td>
+                    <td className="px-4 py-3 font-medium text-primary cursor-pointer flex items-center gap-1" onClick={() => toggleExpand(trx.id)}>
+                      {trx.id.substring(0, 8)}...
+                      {expandedIds.has(trx.id) ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    </td>
+                    <td className="px-4 py-3">{trx.date}</td>
+                    <td className="px-4 py-3 font-medium">{trx.vendor}</td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-main text-text-secondary border whitespace-nowrap inline-block">
+                        {trx.category || 'Belum Kategori'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {trx.payment_method || 'Cash'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-surface-soft text-text-secondary border border-border whitespace-nowrap inline-block">
+                        {trx.source || 'Manual'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right font-bold">
+                      {trx.amount.toLocaleString('id-ID')}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-center space-x-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-text-secondary hover:text-primary" onClick={() => toggleExpand(trx.id)}>
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-text-secondary hover:text-accent" onClick={() => onEdit(trx)}>
+                          <Edit3 className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-text-secondary hover:text-danger" onClick={() => setDeleteTargetId(trx.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
-                )}
-              </React.Fragment>
-            ))}
+                  
+                  {expandedIds.has(trx.id) && (
+                    <tr className="bg-main/20">
+                      <td colSpan={9} className="px-10 py-4 border-b">
+                        <div className="bg-white p-4 rounded border shadow-sm">
+                          <h4 className="text-xs font-bold text-text-secondary uppercase mb-2 border-b pb-2">Detail Item</h4>
+                          {trx.items && trx.items.length > 0 ? (
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="text-text-secondary">
+                                  <th className="text-left py-1">Nama Barang</th>
+                                  <th className="text-center py-1">Qty</th>
+                                  <th className="text-right py-1">Harga Satuan</th>
+                                  <th className="text-right py-1">Subtotal</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {trx.items.map((item: any, i: number) => (
+                                  <tr key={i} className="border-t border-border/50">
+                                    <td className="py-2">{item.name}</td>
+                                    <td className="py-2 text-center">{item.qty} {item.unit}</td>
+                                    <td className="py-2 text-right">Rp {item.price.toLocaleString('id-ID')}</td>
+                                    <td className="py-2 text-right font-medium">Rp {(item.subtotal ?? (item.qty * item.price)).toLocaleString('id-ID')}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          ) : (
+                            <p className="text-sm text-text-secondary italic">Tidak ada rincian item.</p>
+                          )}
+                          
+                          {trx.notes && (
+                            <div className="mt-4 pt-3 border-t border-border/50">
+                              <h4 className="text-xs font-bold text-text-secondary uppercase mb-1">Catatan Tambahan</h4>
+                              <p className="text-sm text-ink bg-main/50 p-3 rounded">{trx.notes}</p>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={9} className="px-4 py-8">
+                  <EmptyState 
+                    scenario={transactions.length === 0 ? 'no-data' : 'no-results'}
+                    onClearFilters={() => setSearchQuery('')}
+                  />
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

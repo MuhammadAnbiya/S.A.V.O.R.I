@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { Mic, Square, Loader2, Volume2 } from 'lucide-react';
 import ExtractionResult from './ExtractionResult';
 import { toast } from 'sonner';
+import LoadingTextRotator from './LoadingTextRotator';
 
 export default function VoiceUploader() {
   const [isRecording, setIsRecording] = useState(false);
@@ -160,9 +161,15 @@ export default function VoiceUploader() {
         {/* Status Text */}
         <div className="h-10">
           {isProcessing ? (
-            <div className="flex items-center justify-center text-primary font-medium">
-              <Volume2 className="w-5 h-5 mr-2 animate-pulse" />
-              Memproses Suara... (0.5s)
+            <div className="flex items-center justify-center text-primary font-medium gap-2">
+              <Volume2 className="w-5 h-5 animate-pulse flex-shrink-0" />
+              <LoadingTextRotator
+                texts={[
+                  "Transcribing audio stream via Whisper...",
+                  "Processing semantic intent with Llama...",
+                  "Structuring transaction JSON..."
+                ]}
+              />
             </div>
           ) : isRecording ? (
             <div className="text-red-500 font-bold text-xl animate-pulse">
