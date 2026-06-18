@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from "sonner";
 import { Button } from '@/components/ui/button';
@@ -9,115 +9,133 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Trash2, Plus, Check } from 'lucide-react';
+import { useForm, useFieldArray } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const itemSchema = z.object({
+  name: z.string().min(1, 'Nama item wajib diisi'),
+  quantity: z.preprocess(
+    (val) => (val === '' || val === undefined ? undefined : Number(val)),
+    z.number().int('Qty harus berupa angka bulat').min(1, 'Qty minimal 1')
+  ),
+  unit: z.string().min(1, 'Satuan wajib diisi').default('pcs'),
+  unit_price: z.preprocess(
+    (val) => (val === '' || val === undefined ? undefined : Number(val)),
+    z.number().positive('Harga harus lebih besar dari 0')
+  )
+});
+
+const transactionSchema = z.object({
+  vendor_name: z.string().min(1, 'Nama vendor/pelanggan wajib diisi'),
+  transaction_date: z.string().min(1, 'Tanggal transaksi wajib diisi'),
+  type: z.string().min(1, 'Jenis transaksi wajib diisi'),
+  category: z.string().min(1, 'Kategori wajib diisi'),
+  payment_method: z.string().min(1, 'Metode pembayaran wajib diisi'),
+  branch: z.string().min(1, 'Cabang wajib diisi').default('Pusat'),
+  notes: z.string().optional(),
+  total_amount: z.preprocess(
+    (val) => (val === '' || val === undefined ? undefined : Number(val)),
+    z.number().positive('Total harus lebih besar dari 0')
+  ),
+  items: z.array(itemSchema).min(1, 'Minimal harus ada 1 item')
+});
 
 export default function ManualInputForm({ initialData }: { initialData?: any }) {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const [data, setData] = useState({
-    id: initialData?.id || '',
-    vendor_name: initialData?.vendor_name || initialData?.vendor || '',
-    transaction_date: initialData?.transaction_date || initialData?.date || '',
-    type: initialData?.type || 'Pengeluaran',
-    category: initialData?.category || 'Operasional',
-    payment_method: initialData?.payment_method || 'Cash',
-    branch: initialData?.branch || 'Pusat',
-    notes: initialData?.notes || '',
-    total_amount: initialData?.total_amount || initialData?.amount || 0,
-    items: initialData?.items && initialData.items.length > 0 ? initialData.items.map((item: any) => ({
-      id: item.id || Date.now().toString() + Math.random(),
-      name: item.name,
-      quantity: item.qty || item.quantity || 1,
-      unit: item.unit || 'pcs',
-      unit_price: item.price || item.unit_price || 0,
-      subtotal: (item.qty || item.quantity || 1) * (item.price || item.unit_price || 0)
-    })) : [
-      {
-        id: Date.now().toString(),
-        name: '',
-        quantity: 1,
-        unit: 'pcs',
-        unit_price: 0,
-        subtotal: 0
-      }
-    ]
+  const { 
+    register, 
+    control, 
+    handleSubmit, 
+    watch, 
+    setValue, 
+    formState: { errors, isSubmitting } 
+  } = useForm({
+    resolver: zodResolver(transactionSchema),
+    defaultValues: {
+      vendor_name: initialData?.vendor_name || initialData?.vendor || '',
+      transaction_date: initialData?.transaction_date || initialData?.date || '',
+      type: initialData?.type || 'Pengeluaran',
+      category: initialData?.category || 'Operasional',
+      payment_method: initialData?.payment_method || 'Cash',
+      branch: initialData?.branch || 'Pusat',
+      notes: initialData?.notes || '',
+      total_amount: initialData?.total_amount || initialData?.amount || 0,
+      items: initialData?.items && initialData.items.length > 0 
+        ? initialData.items.map((item: any) => ({
+            name: item.name || '',
+            quantity: item.qty || item.quantity || 1,
+            unit: item.unit || 'pcs',
+            unit_price: item.price || item.unit_price || 0,
+          })) 
+        : [
+            {
+              name: '',
+              quantity: 1,
+              unit: 'pcs',
+              unit_price: 0
+            }
+          ]
+    }
   });
 
-  const handleItemChange = (id: string, field: string, value: string | number) => {
-    setData(prev => {
-      const newItems = prev.items.map((item: any) => {
-        if (item.id === id) {
-          const updatedItem = { ...item, [field]: value };
-          if (field === 'quantity' || field === 'unit_price') {
-            updatedItem.subtotal = Number(updatedItem.quantity) * Number(updatedItem.unit_price);
-          }
-          return updatedItem;
-        }
-        return item;
-      });
+  const formErrors = errors as any;
 
-      const newTotal = newItems.reduce((sum: number, item: any) => sum + Number(item.subtotal), 0);
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "items"
+  });
 
-      return {
-        ...prev,
-        items: newItems,
-        total_amount: newTotal
-      };
-    });
+  const watchedItems = watch("items");
+
+  // Automatically calculate and set the total_amount when items change
+  useEffect(() => {
+    if (!watchedItems) return;
+    const total = watchedItems.reduce((sum, item) => {
+      const qty = Number(item.quantity) || 0;
+      const price = Number(item.unit_price) || 0;
+      return sum + (qty * price);
+    }, 0);
+    setValue("total_amount", total);
+  }, [watchedItems, setValue]);
+
+  const preventInvalidNumberChars = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (['e', 'E', '-', '+'].includes(e.key)) {
+      e.preventDefault();
+    }
   };
 
-  const addItem = () => {
-    setData(prev => ({
-      ...prev,
-      items: [
-        ...prev.items,
-        {
-          id: Date.now().toString(),
-          name: '',
-          quantity: 1,
-          unit: 'pcs',
-          unit_price: 0,
-          subtotal: 0
-        }
-      ]
-    }));
+  const preventInvalidIntegerChars = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (['e', 'E', '-', '+', '.', ','].includes(e.key)) {
+      e.preventDefault();
+    }
   };
 
-  const removeItem = (id: string) => {
-    setData(prev => {
-      const newItems = prev.items.filter((item: any) => item.id !== id);
-      const newTotal = newItems.reduce((sum: number, item: any) => sum + Number(item.subtotal), 0);
-      return { ...prev, items: newItems, total_amount: newTotal };
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
+  const onSubmit = async (values: any) => {
     try {
       const payload = {
-        vendor_name: data.vendor_name,
-        transaction_date: data.transaction_date,
-        amount: data.total_amount,
-        type: data.type,
-        category: data.category,
-        payment_method: data.payment_method,
-        branch: data.branch,
-        notes: data.notes,
+        vendor_name: values.vendor_name,
+        transaction_date: values.transaction_date,
+        amount: values.total_amount,
+        type: values.type,
+        category: values.category,
+        payment_method: values.payment_method,
+        branch: values.branch,
+        notes: values.notes,
         status: 'Verified',
         source: 'Manual',
-        items: data.items.map((item: any) => ({
+        items: values.items.map((item: any) => ({
           name: item.name,
-          qty: Number(item.quantity) || 1,
-          unit: item.unit || 'pcs',
-          price: Number(item.unit_price) || 0,
-          subtotal: Number(item.subtotal) || 0
+          qty: item.quantity,
+          unit: item.unit,
+          price: item.unit_price,
+          subtotal: item.quantity * item.unit_price
         }))
       };
 
-      const url = data.id ? `/api/transactions/${data.id}` : '/api/transactions';
-      const method = data.id ? 'PATCH' : 'POST';
+      const url = initialData?.id ? `/api/transactions/${initialData.id}` : '/api/transactions';
+      const method = initialData?.id ? 'PATCH' : 'POST';
 
       const response = await fetch(url, {
         method,
@@ -127,40 +145,36 @@ export default function ManualInputForm({ initialData }: { initialData?: any }) 
 
       if (!response.ok) throw new Error('Gagal menyimpan transaksi');
 
-      toast.success(data.id ? 'Data berhasil diperbarui!' : 'Data berhasil disimpan!');
+      toast.success(initialData?.id ? 'Data berhasil diperbarui!' : 'Data berhasil disimpan!');
       router.push('/dashboard/database');
-      // For refreshing parent components if used inside a modal
-      if (data.id) window.location.reload(); 
+      if (initialData?.id) window.location.reload(); 
     } catch (error) {
       console.error(error);
       toast.error('Gagal menyimpan transaksi ke database.');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="space-y-2">
           <Label htmlFor="type">Jenis Transaksi</Label>
           <select 
             id="type" 
-            value={data.type}
-            onChange={(e) => setData({...data, type: e.target.value})}
+            {...register("type")}
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <option value="Pengeluaran">Pengeluaran</option>
             <option value="Pemasukan">Pemasukan</option>
           </select>
+          {formErrors.type && <p className="text-xs text-danger font-medium mt-1">{formErrors.type.message}</p>}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="category">Kategori</Label>
           <select 
             id="category" 
-            value={data.category}
-            onChange={(e) => setData({...data, category: e.target.value})}
+            {...register("category")}
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <option value="Operasional">Operasional</option>
@@ -168,6 +182,7 @@ export default function ManualInputForm({ initialData }: { initialData?: any }) 
             <option value="Bahan Baku">Bahan Baku</option>
             <option value="Transportasi">Transportasi</option>
           </select>
+          {formErrors.category && <p className="text-xs text-danger font-medium mt-1">{formErrors.category.message}</p>}
         </div>
 
         <div className="space-y-2">
@@ -175,10 +190,9 @@ export default function ManualInputForm({ initialData }: { initialData?: any }) 
           <Input 
             id="vendor" 
             placeholder="Ketik nama vendor..." 
-            value={data.vendor_name}
-            onChange={(e) => setData({...data, vendor_name: e.target.value})}
-            required 
+            {...register("vendor_name")}
           />
+          {formErrors.vendor_name && <p className="text-xs text-danger font-medium mt-1">{formErrors.vendor_name.message}</p>}
         </div>
         
         <div className="space-y-2">
@@ -186,10 +200,9 @@ export default function ManualInputForm({ initialData }: { initialData?: any }) 
           <Input 
             id="date" 
             type="date" 
-            value={data.transaction_date}
-            onChange={(e) => setData({...data, transaction_date: e.target.value})}
-            required 
+            {...register("transaction_date")}
           />
+          {formErrors.transaction_date && <p className="text-xs text-danger font-medium mt-1">{formErrors.transaction_date.message}</p>}
         </div>
 
         <div className="space-y-2">
@@ -197,17 +210,16 @@ export default function ManualInputForm({ initialData }: { initialData?: any }) 
           <Input 
             id="branch" 
             placeholder="Contoh: Pusat, Cabang 1"
-            value={data.branch}
-            onChange={(e) => setData({...data, branch: e.target.value})}
+            {...register("branch")}
           />
+          {formErrors.branch && <p className="text-xs text-danger font-medium mt-1">{formErrors.branch.message}</p>}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="payment_method">Metode Pembayaran</Label>
           <select 
             id="payment_method" 
-            value={data.payment_method}
-            onChange={(e) => setData({...data, payment_method: e.target.value})}
+            {...register("payment_method")}
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <option value="Cash">Cash (Tunai)</option>
@@ -219,13 +231,14 @@ export default function ManualInputForm({ initialData }: { initialData?: any }) 
             <option value="Transfer Bank">Transfer Bank</option>
             <option value="Kartu Kredit">Kartu Kredit / Debit</option>
           </select>
+          {formErrors.payment_method && <p className="text-xs text-danger font-medium mt-1">{formErrors.payment_method.message}</p>}
         </div>
       </div>
 
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <Label className="text-base font-semibold">Daftar Item</Label>
-          <Button type="button" variant="outline" size="sm" onClick={addItem}>
+          <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', quantity: 1, unit: 'pcs', unit_price: 0 })}>
             <Plus className="w-4 h-4 mr-1" /> Tambah Item
           </Button>
         </div>
@@ -241,92 +254,113 @@ export default function ManualInputForm({ initialData }: { initialData?: any }) 
           </div>
 
           <div className="space-y-3 md:space-y-0 md:border md:rounded-b-md md:border-t-0 md:-mt-3">
-            {data.items.map((item: any, index: number) => (
-              <div 
-                key={item.id} 
-                className="relative bg-white border rounded-lg p-3 shadow-sm md:grid md:grid-cols-12 md:gap-2 md:items-center md:border-0 md:border-b md:last:border-0 md:rounded-none md:shadow-none md:p-2"
-              >
-                {/* Mobile Header */}
-                <div className="flex justify-between items-center mb-2 md:hidden">
-                  <span className="text-xs font-semibold text-text-tertiary uppercase">Item {index + 1}</span>
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6 text-danger hover:bg-danger/10"
-                    onClick={() => removeItem(item.id)}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
+            {fields.map((field, index) => {
+              const qty = watch(`items.${index}.quantity`);
+              const price = watch(`items.${index}.unit_price`);
+              const subtotal = (Number(qty) || 0) * (Number(price) || 0);
 
-                <div className="col-span-4 mb-2 md:mb-0">
-                  <Label className="text-xs text-text-secondary md:hidden mb-1 block">Nama Item</Label>
-                  <Input 
-                    value={item.name} 
-                    onChange={(e) => handleItemChange(item.id, 'name', e.target.value)}
-                    className="h-9 md:h-8"
-                    required
-                    placeholder="Nama barang..."
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2 mb-2 md:mb-0 md:col-span-4">
-                  <div>
-                    <Label className="text-xs text-text-secondary md:hidden mb-1 block">Qty</Label>
+              return (
+                <div 
+                  key={field.id} 
+                  className="relative bg-white border rounded-lg p-3 shadow-sm md:grid md:grid-cols-12 md:gap-2 md:items-center md:border-0 md:border-b md:last:border-0 md:rounded-none md:shadow-none md:p-2"
+                >
+                  {/* Mobile Header */}
+                  <div className="flex justify-between items-center mb-2 md:hidden">
+                    <span className="text-xs font-semibold text-text-tertiary uppercase">Item {index + 1}</span>
+                    {fields.length > 1 && (
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 text-danger hover:bg-danger/10"
+                        onClick={() => remove(index)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="col-span-4 mb-2 md:mb-0">
+                    <Label className="text-xs text-text-secondary md:hidden mb-1 block">Nama Item</Label>
+                    <Input 
+                      {...register(`items.${index}.name` as const)}
+                      className="h-9 md:h-8"
+                      placeholder="Nama barang..."
+                    />
+                    {formErrors.items?.[index]?.name && (
+                      <p className="text-xs text-danger font-medium mt-1">{formErrors.items[index]?.name?.message}</p>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 mb-2 md:mb-0 md:col-span-4">
+                    <div>
+                      <Label className="text-xs text-text-secondary md:hidden mb-1 block">Qty</Label>
+                      <Input 
+                        type="number" 
+                        {...register(`items.${index}.quantity` as const)}
+                        className="h-9 md:h-8"
+                        min="1"
+                        step="1"
+                        onKeyDown={preventInvalidIntegerChars}
+                      />
+                      {formErrors.items?.[index]?.quantity && (
+                        <p className="text-xs text-danger font-medium mt-1">{formErrors.items[index]?.quantity?.message}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-xs text-text-secondary md:hidden mb-1 block">Satuan</Label>
+                      <Input 
+                        {...register(`items.${index}.unit` as const)}
+                        className="h-9 md:h-8"
+                        placeholder="pcs, kg..."
+                      />
+                      {formErrors.items?.[index]?.unit && (
+                        <p className="text-xs text-danger font-medium mt-1">{formErrors.items[index]?.unit?.message}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="col-span-2 mb-2 md:mb-0">
+                    <Label className="text-xs text-text-secondary md:hidden mb-1 block">Harga Satuan</Label>
                     <Input 
                       type="number" 
-                      value={item.quantity} 
-                      onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value)}
-                      className="h-9 md:h-8"
+                      {...register(`items.${index}.unit_price` as const)}
+                      className="h-9 md:h-8 md:text-right"
                       min="0.01"
                       step="any"
-                      required
+                      onKeyDown={preventInvalidNumberChars}
                     />
+                    {formErrors.items?.[index]?.unit_price && (
+                      <p className="text-xs text-danger font-medium mt-1">{formErrors.items[index]?.unit_price?.message}</p>
+                    )}
                   </div>
-                  <div>
-                    <Label className="text-xs text-text-secondary md:hidden mb-1 block">Satuan</Label>
-                    <Input 
-                      value={item.unit} 
-                      onChange={(e) => handleItemChange(item.id, 'unit', e.target.value)}
-                      className="h-9 md:h-8"
-                      placeholder="pcs, kg..."
-                    />
-                  </div>
-                </div>
 
-                <div className="col-span-2 mb-2 md:mb-0">
-                  <Label className="text-xs text-text-secondary md:hidden mb-1 block">Harga Satuan</Label>
-                  <Input 
-                    type="number" 
-                    value={item.unit_price} 
-                    onChange={(e) => handleItemChange(item.id, 'unit_price', e.target.value)}
-                    className="h-9 md:h-8 md:text-right"
-                    min="0"
-                    required
-                  />
-                </div>
-
-                <div className="col-span-2 flex items-center justify-between md:justify-end">
-                  <Label className="text-xs text-text-secondary md:hidden">Subtotal</Label>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm md:mr-2">Rp {Number(item.subtotal).toLocaleString('id-ID')}</span>
-                    {/* Desktop Delete Button */}
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 text-danger hover:bg-danger/10 hidden md:flex"
-                      onClick={() => removeItem(item.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                  <div className="col-span-2 flex items-center justify-between md:justify-end">
+                    <Label className="text-xs text-text-secondary md:hidden">Subtotal</Label>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm md:mr-2">Rp {subtotal.toLocaleString('id-ID')}</span>
+                      {/* Desktop Delete Button */}
+                      {fields.length > 1 && (
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-danger hover:bg-danger/10 hidden md:flex"
+                          onClick={() => remove(index)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
+        {formErrors.items && !Array.isArray(formErrors.items) && (
+          <p className="text-sm text-danger font-medium mt-1">{(formErrors.items as any).message}</p>
+        )}
       </div>
 
       <div className="flex flex-col md:flex-row justify-between gap-6 pt-4 border-t">
@@ -334,8 +368,7 @@ export default function ManualInputForm({ initialData }: { initialData?: any }) 
           <Label htmlFor="notes">Catatan Tambahan (Opsional)</Label>
           <Textarea 
             id="notes" 
-            value={data.notes}
-            onChange={(e) => setData({...data, notes: e.target.value})}
+            {...register("notes")}
             placeholder="Masukkan catatan tambahan jika ada..." 
             className="resize-none h-20"
           />
@@ -346,11 +379,11 @@ export default function ManualInputForm({ initialData }: { initialData?: any }) 
           <Input 
             id="total_amount" 
             type="number"
-            value={data.total_amount}
-            onChange={(e) => setData({...data, total_amount: Number(e.target.value)})}
+            {...register("total_amount")}
             className="text-xl font-bold text-right h-12"
-            required
+            onKeyDown={preventInvalidNumberChars}
           />
+          {formErrors.total_amount && <p className="text-xs text-danger font-medium mt-1 text-right">{formErrors.total_amount.message}</p>}
         </div>
       </div>
 

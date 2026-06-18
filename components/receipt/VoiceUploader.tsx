@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Mic, Square, Loader2, Volume2 } from 'lucide-react';
 import ExtractionResult from './ExtractionResult';
+import { toast } from 'sonner';
 
 export default function VoiceUploader() {
   const [isRecording, setIsRecording] = useState(false);
@@ -47,9 +48,15 @@ export default function VoiceUploader() {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('Mic access error:', err);
-      setError('Gagal mengakses mikrofon. Pastikan Anda telah memberikan izin.');
+      const errorName = err?.name || '';
+      if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
+        toast.error("Microphone/Camera access blocked. Please allow permissions in your browser settings (click the lock icon in the URL bar) to use this feature.");
+        setError('Akses mikrofon diblokir. Harap izinkan akses mikrofon di pengaturan browser Anda.');
+      } else {
+        setError('Gagal mengakses mikrofon. Pastikan mikrofon terhubung dan coba lagi.');
+      }
     }
   };
 

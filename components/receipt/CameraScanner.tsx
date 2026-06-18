@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Camera, RefreshCw, AlertCircle, ShieldAlert, VideoOff } from 'lucide-react';
 import ExtractionResult from './ExtractionResult';
+import { toast } from 'sonner';
 
 type CameraState = 'idle' | 'requesting' | 'active' | 'denied' | 'unavailable' | 'processing';
 
@@ -59,6 +60,7 @@ export default function CameraScanner() {
 
       if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
         // User explicitly denied OR dismissed the dialog
+        toast.error("Microphone/Camera access blocked. Please allow permissions in your browser settings (click the lock icon in the URL bar) to use this feature.");
         setCameraState('denied');
         setErrorMessage('Izin kamera ditolak atau dibatalkan. Klik tombol di bawah untuk coba lagi, atau izinkan kamera melalui pengaturan browser Anda.');
       } else if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
