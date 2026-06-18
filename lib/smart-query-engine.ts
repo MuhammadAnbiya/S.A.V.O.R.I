@@ -110,15 +110,14 @@ function getTimeRange(question: string): { start: Date; end: Date; label: string
 function extractSearchKeyword(question: string): string | null {
   // Remove common question words, time markers etc.
   const clean = question.toLowerCase()
-    .replace(/berapa\s*(kali|banyak|sering|total|jumlah|harga|biaya|rp)?/gi, '')
-    .replace(/kapan\s*(saja|aja)?/gi, '')
-    .replace(/dimana\s*(saja|aja)?|di\s*mana/gi, '')
-    .replace(/hari\s*ini|kemarin|minggu\s*(ini|lalu)|bulan\s*(ini|lalu)|akhir\s*akhir\s*ini|belakangan\s*ini/gi, '')
-    .replace(/saya|aku|gue|gw|kamu|anda/gi, '')
-    .replace(/beli|membeli|belanja|makan|minum|pesan|order/gi, '')
-    .replace(/yang|dan|atau|ini|itu|ke|di|dari|untuk|pada|dengan|paling|sering|terbanyak|termahal/gi, '')
-    .replace(/kalau|semua|dijumlahkan|jumlahkan|totalkan|seluruh|pengeluaran|pengeluran|rp|nya\b/gi, '')
-    .replace(/total|harga|biaya/gi, '')
+    .replace(/\b(berapa|kali|banyak|sering|total|jumlah|harga|biaya|rp)\b/gi, '')
+    .replace(/\b(kapan|saja|aja)\b/gi, '')
+    .replace(/\b(dimana|di mana)\b/gi, '')
+    .replace(/\b(hari ini|kemarin|minggu ini|minggu lalu|bulan ini|bulan lalu|akhir akhir ini|belakangan ini)\b/gi, '')
+    .replace(/\b(saya|aku|gue|gw|kamu|anda)\b/gi, '')
+    .replace(/\b(beli|membeli|belanja|makan|minum|pesan|order)\b/gi, '')
+    .replace(/\b(yang|dan|atau|ini|itu|ke|di|dari|untuk|pada|dengan|paling|sering|terbanyak|termahal)\b/gi, '')
+    .replace(/\b(kalau|semua|dijumlahkan|jumlahkan|totalkan|seluruh|pengeluaran|pengeluran|rp|nya)\b/gi, '')
     .replace(/\?|!|,|\./g, '')
     .trim();
 
