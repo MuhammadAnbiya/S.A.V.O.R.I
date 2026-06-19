@@ -5,10 +5,10 @@
   <br />
 
   # ✦ S.A.V.O.R.I
-  **Smart Automated Voice & Optical Receipt Intelligence**
+  **Smart Analytics & Vision Optimization for Restaurant Intelligence**
 
   <p align="center">
-    Sistem manajemen transaksi dan pengeluaran cerdas berbasis AI generasi berikutnya. Dirancang untuk otomatisasi ekstraksi data struk serta pelacakan keuangan real-time menggunakan kombinasi Vision Language Models (VLM) dan Speech-to-Text (STT) mutakhir.
+    Sistem manajemen transaksi dan pengeluaran cerdas berbasis AI generasi berikutnya. Dirancang untuk otomatisasi ekstraksi data struk serta pelacakan keuangan real-time menggunakan kombinasi Vision Language Models (VLM), Speech-to-Text (STT), dan ML Forecasting mutakhir.
   </p>
 
   <br />
@@ -26,50 +26,37 @@
 
 <hr />
 
-## ✨ Fitur Utama (Core Features)
+## 📖 Deskripsi Singkat Proyek
+**S.A.V.O.R.I** (Smart Analytics & Vision Optimization for Restaurant Intelligence) adalah aplikasi berbasis web yang merevolusi cara bisnis (terutama restoran dan retail) dalam mencatat pengeluaran dan menganalisis tren pendapatan. 
 
-### 🎙️ 1. Voice-to-Data Intelligence (Pesan Suara)
-Tidak punya waktu untuk mengetik? Cukup tekan tombol *Mic* dan ucapkan transaksi Anda (contoh: *"Makan siang di Solaria abis 120 ribu bayar pake QRIS"*). 
-Sistem akan menggunakan **Groq Whisper Large V3** untuk mentranskripsi suara Anda secara kilat (< 1 detik), lalu **Llama 3.3 70B** akan mengekstraknya menjadi data JSON terstruktur yang langsung masuk ke *database*!
-
-### 📸 2. Vision OCR Extractor (Pemindai Struk)
-Unggah foto struk belanja atau gunakan kamera langsung. Model VLM **Qwen 2.5 VL 72B** akan membaca secara cerdas nama vendor, tanggal, daftar item belanja (nama, *qty*, harga), hingga total harga dengan tingkat akurasi luar biasa.
-
-### 🗄️ 3. Smart Database Management
-Manajemen *database* transaksi bergaya *spreadsheet* modern. 
-- Filter pencarian kompleks (Kategori, Rentang Tanggal, Sumber Input, Cabang).
-- *Sorting* cerdas yang menempatkan data terbaru (*created_at*) selalu di atas.
-- *Pagination* responsif.
-- Fitur *Export* ke CSV.
-
-### 🎨 4. Premium & Elegant UI/UX
-Dibangun menggunakan desain sistem *Radix-Nova* dan *Tailwind CSS v4*, menghasilkan *interface* yang mewah, mulus, dan responsif (mendukung *Glassmorphism* dan animasi interaktif).
+Aplikasi ini menggunakan teknologi AI tingkat lanjut untuk menyederhanakan *data entry*:
+- **Pemindai Struk Otomatis (Vision)**: Pengguna dapat memfoto atau mengunggah beberapa struk sekaligus (Batch Processing), dan AI Qwen 2.5 VL akan mengekstrak detail transaksi secara akurat.
+- **Pencatatan Berbasis Suara (Voice)**: Pengguna cukup berbicara untuk mencatat pengeluaran ("Beli bahan baku daging 500 ribu"), dan AI Groq Whisper akan mengubahnya menjadi data terstruktur.
+- **Prediksi Cerdas (Forecasting)**: Menggunakan model Machine Learning kustom (XGBoost) yang berjalan di *microservice* Python untuk memprediksi tren pendapatan di masa depan.
 
 ---
 
-## 🛠️ Arsitektur & Teknologi (Tech Stack)
+## 🛠️ Tautan Model AI / ML
+Proyek ini menggunakan model **XGBoost (savori_forecast_model.pkl)** untuk fitur prediksi pendapatan (Forecasting).
+🔗 **[Tautan Download Model XGBoost (.pkl) di Google Drive](#masukkan-link-google-drive-anda-disini)**
 
-| Kategori | Teknologi | Penjelasan |
-| :--- | :--- | :--- |
-| **Framework** | Next.js 16 (App Router) | *Server Actions* & *React Server Components*. |
-| **Styling** | Tailwind CSS v4 & Shadcn/UI | Sistem desain modern dengan variabel CSS *custom*. |
-| **Database** | PostgreSQL (via Supabase) | Penyimpanan data relasional skala penuh. |
-| **Authentication** | Supabase Auth (@supabase/ssr) | Autentikasi aman berbasis sesi (*Session-based*). |
-| **Vision AI** | Qwen 2.5 VL 72B Instruct | Membaca struk gambar (*Optical Character Recognition*). |
-| **Voice/Text AI** | Groq (Whisper + Llama 3.3) | Transkripsi suara & penalaran logika JSON super cepat. |
+> **Catatan untuk Tim Penilai**: Model telah diunggah ke Google Drive dan diatur agar akun **pijak@student.devacademy.id** memiliki akses untuk melihat dan mengunduh.
 
 ---
 
-## 🚀 Cara Menjalankan Proyek (Getting Started)
+## ⚙️ Petunjuk Setup Environment
 
 ### 1. Kebutuhan Sistem (Prerequisites)
 Pastikan Anda telah menginstal:
-- Node.js (v18+)
-- npm / yarn / pnpm
-- Akun Supabase (untuk Database & Auth)
-- API Keys dari OpenRouter (untuk Qwen) & Groq (untuk Llama/Whisper).
+- **Node.js** (v18+)
+- **Python** (v3.9+)
+- **npm** atau **yarn**
+- Akun **Supabase** (untuk Database & Autentikasi)
+- API Keys dari **OpenRouter** (untuk Qwen), **Groq** (untuk Llama/Whisper), dan **Gemini** (sebagai *fallback*).
 
-### 2. Instalasi
+### 2. Instalasi Dependensi
+Jalankan perintah berikut di terminal:
+
 ```bash
 # 1. Clone repositori ini
 git clone https://github.com/MuhammadAnbiya/S.A.V.O.R.I.git
@@ -77,47 +64,67 @@ git clone https://github.com/MuhammadAnbiya/S.A.V.O.R.I.git
 # 2. Masuk ke dalam direktori proyek
 cd S.A.V.O.R.I
 
-# 3. Instal dependensi
+# 3. Instal dependensi Node.js (Frontend & Backend Next.js)
 npm install
+
+# 4. Instal dependensi Python (Microservice Forecasting)
+cd services/forecasting
+pip install -r requirements.txt
+cd ../..
 ```
 
-### 3. Konfigurasi Environment Variables
-Buat file `.env.local` di *root* proyek Anda, dan sesuaikan nilai-nilainya:
+### 3. Konfigurasi Environment Variables (`.env`)
+Gunakan template `.env.example` yang telah disediakan untuk membuat file konfigurasi Anda:
 
-```env
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=https://[PROJECT_ID].supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=ey...
-SUPABASE_SERVICE_ROLE_KEY=ey...
+1. Duplikasi file `.env.example` dan ubah namanya menjadi `.env.local`
+2. Buka `.env.local` dan isi dengan kredensial Anda yang sebenarnya:
+   - **Supabase**: Dapatkan URL dan Key dari Dashboard Supabase Anda.
+   - **API Keys**: Masukkan key dari Groq, Gemini, dan OpenRouter.
+   - **Database**: Jika menggunakan database baru, pastikan skema sudah disesuaikan menggunakan file `supabase_schema.sql` yang tersedia.
 
-# AI Configuration (Vision & Voice)
-QWEN_API_KEY=sk-or-v1-xxx...
-QWEN_BASE_URL=https://openrouter.ai/api/v1
-QWEN_MODEL_NAME=qwen/qwen-2.5-vl-72b-instruct
-
-GROQ_API_KEY=gsk_xxx...
-```
-
-### 4. Menjalankan Server Pengembangan (Dev Server)
-```bash
-npm run dev
-```
-Buka [http://localhost:3000](http://localhost:3000) di *browser* Anda untuk melihat hasil akhirnya.
+*(Ingat: Jangan pernah men-commit file `.env.local` ke repositori publik!)*
 
 ---
 
-## 📂 Struktur Folder Penting
+## 🚀 Cara Menjalankan Aplikasi
 
-- `app/` - Direktori utama Next.js App Router (Halaman & API Routes).
-- `app/api/scanner/voice` - *Endpoint* pemroses *Voice-to-Data* (Groq).
-- `app/api/scanner/extract` - *Endpoint* pemroses foto struk (Qwen).
-- `components/receipt/` - Komponen khusus pemindai struk & penangkap suara (*VoiceUploader*).
-- `components/crud/` - Komponen tabel *database*, *sidebar filter*, dan aksi data.
-- `lib/` - Fungsi-fungsi *helper* & integrasi AI klien.
-- `supabase_schema.sql` - Skema asli tabel SQL untuk diimpor ke Supabase.
+Aplikasi S.A.V.O.R.I terdiri dari dua layanan utama yang harus dijalankan secara bersamaan:
+
+### Langkah 1: Jalankan Microservice Python (AI Forecasting)
+Microservice ini menggunakan **FastAPI** untuk menyajikan model ML XGBoost.
+Buka terminal pertama, lalu arahkan ke folder *forecasting*:
+
+```bash
+cd services/forecasting
+uvicorn main:app --port 8000 --reload
+```
+*(Server AI akan berjalan di `http://127.0.0.1:8000`)*
+
+### Langkah 2: Jalankan Server Utama Next.js
+Buka jendela terminal baru di *root* direktori proyek, lalu jalankan:
+
+```bash
+npm run dev
+```
+
+### Langkah 3: Akses Aplikasi
+Buka web browser pilihan Anda dan kunjungi:
+👉 **[http://localhost:3000](http://localhost:3000)**
+
+Anda siap untuk menggunakan S.A.V.O.R.I!
+
+---
+
+## 📂 Struktur Repositori
+- `app/` : Direktori utama Next.js (Frontend Pages & API Routes).
+- `components/` : Komponen UI React (*Scanner*, *Voice Uploader*, Tabel).
+- `lib/` : Fungsi utilitas dan konfigurasi SDK AI.
+- `services/forecasting/` : **Microservice ML Python** berisi model XGBoost dan FastAPI.
+- `.env.example` : Template environment variables.
+- `supabase_schema.sql` : Skema database lengkap untuk setup tabel Supabase.
 
 ---
 
 <div align="center">
-  <p>Dibuat dengan ❤️ untuk merevolusi pencatatan keuangan manual.</p>
+  <p>Dibuat dengan ❤️ untuk merevolusi efisiensi operasional F&B dan Retail.</p>
 </div>
