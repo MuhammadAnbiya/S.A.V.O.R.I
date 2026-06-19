@@ -56,7 +56,7 @@ export default function OverviewPage() {
           <p style={{ fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#cc785c', marginBottom: '0.25rem', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
             Business Intelligence
           </p>
-          <h1 style={{ fontFamily: 'var(--font-display, "Cormorant Garamond", serif)', fontSize: '2.25rem', fontWeight: 400, lineHeight: 1.15, letterSpacing: '-0.02em', color: '#141413' }}>
+          <h1 className="text-3xl sm:text-4xl text-[#141413] tracking-tight leading-tight" style={{ fontFamily: 'var(--font-display, "Cormorant Garamond", serif)' }}>
             S.A.V.O.R.I Super Dashboard
           </h1>
           <p style={{ fontSize: '0.9375rem', color: '#6c6a64', marginTop: '0.25rem', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
@@ -64,7 +64,7 @@ export default function OverviewPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-shrink-0">
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto mt-2 sm:mt-0">
           {/* Time Filter Dropdown (Bulan Ini) */}
           <div className="relative flex items-center">
             <CalendarIcon className="absolute left-3 w-4 h-4 text-[#6c6a64] pointer-events-none z-10" />

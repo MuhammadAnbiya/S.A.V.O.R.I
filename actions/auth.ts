@@ -46,6 +46,10 @@ export async function signUpEmail(formData: FormData) {
     return { error: "Semua field wajib diisi" };
   }
 
+  if (!email.toLowerCase().endsWith("@gmail.com")) {
+    return { error: "Pendaftaran akun baru hanya diperbolehkan menggunakan akun yang terdaftar di Google (@gmail.com)" };
+  }
+
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 

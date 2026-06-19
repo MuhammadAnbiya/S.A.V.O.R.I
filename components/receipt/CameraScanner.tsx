@@ -250,8 +250,17 @@ export default function CameraScanner() {
             />
 
             {cameraState === 'active' && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-[70%] h-[85%] border-2 border-[#cc785c]/80 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-6">
+                {/* Subtle corner markers instead of full border to avoid confusing users about the capture area */}
+                <div className="w-full h-full relative">
+                  <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-white/70 rounded-tl-lg" />
+                  <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-white/70 rounded-tr-lg" />
+                  <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-white/70 rounded-bl-lg" />
+                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-white/70 rounded-br-lg" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                     <p className="text-white/50 text-xs font-medium tracking-widest uppercase">Posisikan struk dalam area ini</p>
+                  </div>
+                </div>
               </div>
             )}
 
