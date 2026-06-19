@@ -12,6 +12,10 @@ class ForecastRequest(BaseModel):
     data_points: int
 
 # Attempt to load the model if it exists
+@app.get("/")
+def read_root():
+    return {"status": "healthy"}
+
 try:
     model = joblib.load("model_xgb.pkl")
     print("Model loaded successfully.")
