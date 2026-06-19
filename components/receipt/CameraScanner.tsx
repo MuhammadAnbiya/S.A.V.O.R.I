@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, RefreshCw, AlertCircle, ShieldAlert, VideoOff, Check, X } from 'lucide-react';
+import { Camera, RefreshCw, AlertCircle, ShieldAlert, VideoOff, Check, X, CheckCircle2 } from 'lucide-react';
 import ExtractionResult from './ExtractionResult';
 import { toast } from 'sonner';
-import LoadingTextRotator from './LoadingTextRotator';
 import { useRouter } from 'next/navigation';
 
 type CameraState = 'idle' | 'requesting' | 'active' | 'denied' | 'unavailable' | 'processing';
@@ -17,10 +16,9 @@ export default function CameraScanner() {
 
   const [cameraState, setCameraState] = useState<CameraState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [capturedImages, setCapturedImages] = useState<string[]>([]);
-  const [extractionResults, setExtractionResults] = useState<any[]>([]);
-  const [processingIndex, setProcessingIndex] = useState(0);
-  const [completedCount, setCompletedCount] = useState(0);
+  const [capturedImages, setCapturedImages] = useState<{id: string, base64: string}[]>([]);
+  const [extractionResults, setExtractionResults] = useState<{id: string, data: any}[]>([]);
+  const [processingIndex, setProcessingIndex] = useState(-1);
 
   // Stop and release camera stream
   const stopCamera = useCallback(() => {
@@ -108,12 +106,17 @@ export default function CameraScanner() {
     // Convert to JPEG base64 and add to queue
     const imageBase64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
     
-    setCapturedImages(prev => [...prev, imageBase64]);
-    toast.success("Foto ditambahkan ke antrean!");
+    setCapturedImages(prev => [...prev, { id: `cap-${Date.now()}`, base64: imageBase64 }]);
+    
+    // Simple visual feedback flash on video
+    video.style.opacity = '0.5';
+    setTimeout(() => {
+      video.style.opacity = '1';
+    }, 100);
   };
 
-  const removeCapturedImage = (index: number) => {
-    setCapturedImages(prev => prev.filter((_, idx) => idx !== index));
+  const removeCapturedImage = (idToRemove: string) => {
+    setCapturedImages(prev => prev.filter(img => img.id !== idToRemove));
   };
 
   // Process all captured images
@@ -127,33 +130,32 @@ export default function CameraScanner() {
     const results = [];
     
     for (let i = 0; i < capturedImages.length; i++) {
-      setProcessingIndex(i + 1);
-      const base64 = capturedImages[i];
+      setProcessingIndex(i);
+      const img = capturedImages[i];
       
       try {
         const { extractReceiptWithOCR } = await import('@/lib/receipt-ocr');
-        const result = await extractReceiptWithOCR(base64, 'image/jpeg');
+        const result = await extractReceiptWithOCR(img.base64, 'image/jpeg');
 
-        if (!result || (result.vendor_name.confidence === 0 && result.total_amount.confidence === 0)) {
-          console.warn(`Foto ${i+1} gagal dibaca dengan baik.`);
+        if (result) {
+          results.push({ id: img.id, data: result });
         }
-
-        results.push(result);
       } catch (err: any) {
         console.error(`Error pada foto ${i+1}:`, err);
-        results.push(null);
       }
     }
     
-    const validResults = results.filter(r => r !== null);
-    if (validResults.length === 0) {
+    if (results.length === 0) {
       setErrorMessage("Semua foto gagal diproses. Coba foto ulang dengan pencahayaan dan fokus yang lebih baik.");
       setCameraState('idle');
+      setProcessingIndex(-1);
       return;
     }
 
-    setExtractionResults(validResults);
+    setExtractionResults(results);
     setCapturedImages([]); // clear images
+    setProcessingIndex(-1);
+    toast.success(`${results.length} struk berhasil diekstrak!`);
   };
 
   const resetAll = () => {
@@ -161,250 +163,246 @@ export default function CameraScanner() {
     setCapturedImages([]);
     setCameraState('idle');
     setErrorMessage(null);
-    setCompletedCount(0);
   };
 
-  const handleCurrentSuccessOrSkip = () => {
-    if (extractionResults.length <= 1) {
-      toast.success("Semua struk berhasil diproses!");
-      router.push('/dashboard/database');
-    } else {
-      setExtractionResults(prev => prev.slice(1));
-      setCompletedCount(c => c + 1);
-    }
+  const handleItemDone = (idToRemove: string) => {
+    setExtractionResults(prev => {
+      const remaining = prev.filter(item => item.id !== idToRemove);
+      if (remaining.length === 0) {
+        router.push('/dashboard/database');
+      }
+      return remaining;
+    });
   };
 
-  // ── Extraction result view (Queue-based)
+  // ── Extraction result view (List of all extracted receipts)
   if (extractionResults.length > 0) {
-    const currentResult = extractionResults[0];
-    const totalFilesCount = completedCount + extractionResults.length;
-    
     return (
-      <div className="space-y-4">
-        <div className="flex justify-between items-center mb-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-6 bg-gradient-to-br from-[#faf9f5] to-[#f4f0e6] border border-[#e6dfd8] rounded-xl shadow-sm">
           <div>
-            <h2 className="text-xl font-bold text-primary">Verifikasi Batch</h2>
-            <p className="text-sm text-text-secondary mt-1">Struk ke-{completedCount + 1} dari {totalFilesCount}</p>
+            <h2 className="text-2xl font-bold text-[#141413] font-display">
+              Verifikasi {extractionResults.length} Struk Tersisa
+            </h2>
+            <p className="text-sm text-[#8e8b82] mt-1 font-sans">
+              AI telah mengekstrak data dari foto Anda. Silakan cek kembali dan simpan.
+            </p>
           </div>
           <button
             onClick={resetAll}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', height: '36px', padding: '0 0.875rem', borderRadius: '0.5rem', border: '1px solid #e6dfd8', backgroundColor: '#faf9f5', color: '#c64545', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}
+            className="flex items-center gap-2 h-9 px-4 rounded-lg border border-[#e6dfd8] bg-white text-[#c64545] text-sm font-medium hover:bg-[#c64545]/10 shrink-0 transition-colors"
           >
             Batalkan Semua
           </button>
         </div>
-        <ExtractionResult 
-          initialData={currentResult} 
-          onCancel={handleCurrentSuccessOrSkip} 
-          onSuccess={handleCurrentSuccessOrSkip} 
-          source="Kamera" 
-        />
+
+        <div className="space-y-6">
+          {extractionResults.map((res, index) => (
+            <div key={res.id} className="relative pl-0 md:pl-6">
+              <div className="hidden md:flex absolute left-0 top-6 w-8 h-8 bg-[#cc785c] text-white rounded-full items-center justify-center font-bold text-sm shadow-md ring-4 ring-white z-10">
+                {index + 1}
+              </div>
+              <ExtractionResult 
+                initialData={res.data} 
+                onCancel={() => handleItemDone(res.id)} 
+                onSuccess={() => handleItemDone(res.id)} 
+                source="Kamera" 
+              />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   // ── Camera UI
   return (
-    <div
-      style={{ backgroundColor: '#efe9de', borderRadius: '0.75rem', border: '1px solid #e6dfd8', padding: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}
-    >
+    <div className="bg-[#faf9f5] rounded-xl border border-[#e6dfd8] shadow-sm p-6 sm:p-8 flex flex-col items-center gap-6">
+      
+      <div className="w-full max-w-xl text-center mb-2">
+        <h3 className="text-xl font-bold text-[#141413] mb-2 font-display">Scan Struk Beruntun</h3>
+        <p className="text-sm text-[#8e8b82]">
+          Ambil foto struk satu per satu. Setelah selesai, proses semuanya sekaligus.
+        </p>
+      </div>
+
       {/* Error banner */}
       {errorMessage && (
-        <div
-          style={{ width: '100%', maxWidth: '480px', backgroundColor: 'rgba(198,69,69,0.08)', border: '1px solid rgba(198,69,69,0.2)', borderRadius: '0.5rem', padding: '0.75rem 1rem', display: 'flex', alignItems: 'flex-start', gap: '0.625rem' }}
-        >
-          <ShieldAlert style={{ width: 18, height: 18, color: '#c64545', flexShrink: 0, marginTop: 2 }} />
-          <p style={{ fontSize: '0.875rem', color: '#c64545', lineHeight: 1.5, fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
+        <div className="w-full max-w-xl bg-[#c64545]/10 border border-[#c64545]/20 rounded-lg p-4 flex items-start gap-3">
+          <ShieldAlert className="w-5 h-5 text-[#c64545] flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-[#c64545] leading-relaxed">
             {errorMessage}
           </p>
         </div>
       )}
 
-      {/* Camera viewport */}
-      <div
-        style={{ position: 'relative', width: '100%', maxWidth: '400px', aspectRatio: '3/4', backgroundColor: '#181715', borderRadius: '0.75rem', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      >
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: cameraState === 'active' ? 'block' : 'none' }}
-        />
+      <div className="w-full max-w-4xl flex flex-col md:flex-row gap-6">
+        {/* LEFT/TOP: Camera viewport */}
+        <div className="flex-1 flex flex-col items-center gap-4">
+          <div className="relative w-full max-w-[400px] aspect-[3/4] bg-[#181715] rounded-xl overflow-hidden shadow-inner flex items-center justify-center mx-auto ring-1 ring-black/5">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-150"
+              style={{ display: cameraState === 'active' ? 'block' : 'none' }}
+            />
 
-        {cameraState === 'active' && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-            <div style={{ width: '65%', height: '85%', border: '2px solid rgba(204,120,92,0.8)', borderRadius: '0.5rem', boxShadow: '0 0 0 9999px rgba(0,0,0,0.45)' }} />
-          </div>
-        )}
-
-        {(cameraState === 'idle' || cameraState === 'denied') && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', padding: '2rem', textAlign: 'center' }}>
-            <VideoOff style={{ width: 40, height: 40, color: '#a09d96' }} />
-            <p style={{ color: '#a09d96', fontSize: '0.875rem', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
-              Kamera belum aktif
-            </p>
-          </div>
-        )}
-
-        {cameraState === 'requesting' && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', padding: '2rem', textAlign: 'center' }}>
-            <RefreshCw style={{ width: 36, height: 36, color: '#cc785c', animation: 'spin 1s linear infinite' }} />
-            <p style={{ color: '#a09d96', fontSize: '0.875rem', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
-              Meminta izin kamera...
-            </p>
-          </div>
-        )}
-
-        {cameraState === 'processing' && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(24,23,21,0.9)', gap: '1rem' }}>
-            <RefreshCw style={{ width: 36, height: 36, color: '#cc785c', animation: 'spin 1s linear infinite' }} />
-            <p style={{ color: '#faf9f5', fontSize: '0.9375rem', fontWeight: 500, fontFamily: 'var(--font-sans, Inter, sans-serif)', textAlign: 'center', padding: '0 1rem' }}>
-              <LoadingTextRotator 
-                texts={[
-                  `Memproses foto ${processingIndex} dari ${capturedImages.length}...`,
-                  "Analyzing layout with Qwen VL...",
-                  "Parsing itemized line details...",
-                  "Categorizing financial data..."
-                ]} 
-              />
-            </p>
-            <p style={{ color: '#a09d96', fontSize: '0.8125rem', textAlign: 'center', maxWidth: 260, fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
-              AI sedang mengenali vendor, item, dan total transaksi
-            </p>
-          </div>
-        )}
-
-        {cameraState === 'unavailable' && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', padding: '2rem', textAlign: 'center' }}>
-            <AlertCircle style={{ width: 36, height: 36, color: '#c64545' }} />
-            <p style={{ color: '#a09d96', fontSize: '0.875rem', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
-              Kamera tidak tersedia
-            </p>
-          </div>
-        )}
-
-        <canvas ref={canvasRef} style={{ display: 'none' }} />
-      </div>
-      
-      {/* Captured thumbnails */}
-      {capturedImages.length > 0 && cameraState !== 'processing' && (
-        <div className="w-full max-w-md flex flex-col gap-2">
-          <p className="text-sm font-semibold text-text-secondary">{capturedImages.length} Foto Tersimpan</p>
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
-            {capturedImages.map((base64, idx) => (
-              <div key={idx} className="relative flex-shrink-0 w-16 h-20 rounded overflow-hidden border-2 border-primary/20 bg-black">
-                <img src={`data:image/jpeg;base64,${base64}`} className="w-full h-full object-cover" alt={`Captured ${idx}`} />
-                <button 
-                  onClick={() => removeCapturedImage(idx)}
-                  className="absolute top-0.5 right-0.5 bg-danger text-white rounded-full p-0.5 hover:bg-danger-hover"
-                >
-                  <X className="w-3 h-3" />
-                </button>
+            {cameraState === 'active' && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-[70%] h-[85%] border-2 border-[#cc785c]/80 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
               </div>
-            ))}
+            )}
+
+            {(cameraState === 'idle' || cameraState === 'denied') && (
+              <div className="flex flex-col items-center gap-3 p-8 text-center">
+                <VideoOff className="w-10 h-10 text-[#a09d96]" />
+                <p className="text-[#a09d96] text-sm">Kamera belum aktif</p>
+              </div>
+            )}
+
+            {cameraState === 'requesting' && (
+              <div className="flex flex-col items-center gap-3 p-8 text-center">
+                <RefreshCw className="w-9 h-9 text-[#cc785c] animate-spin" />
+                <p className="text-[#a09d96] text-sm">Meminta izin kamera...</p>
+              </div>
+            )}
+
+            {cameraState === 'processing' && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#181715]/90 backdrop-blur-sm gap-4">
+                <RefreshCw className="w-10 h-10 text-[#cc785c] animate-spin" />
+                <p className="text-white font-medium text-center px-4 animate-pulse">
+                  Mengekstrak {capturedImages.length} struk...
+                </p>
+              </div>
+            )}
+
+            {cameraState === 'unavailable' && (
+              <div className="flex flex-col items-center gap-3 p-8 text-center">
+                <AlertCircle className="w-9 h-9 text-[#c64545]" />
+                <p className="text-[#a09d96] text-sm">Kamera tidak tersedia</p>
+              </div>
+            )}
+
+            <canvas ref={canvasRef} className="hidden" />
+          </div>
+
+          {/* Action buttons under camera */}
+          <div className="flex w-full max-w-[400px] gap-3">
+            {cameraState !== 'active' && cameraState !== 'processing' && (
+              <button
+                onClick={startCamera}
+                disabled={cameraState === 'requesting' || cameraState === 'unavailable'}
+                className={`flex-1 h-12 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors
+                  ${(cameraState === 'requesting' || cameraState === 'unavailable') 
+                    ? 'bg-[#e6dfd8] text-[#8e8b82] cursor-not-allowed' 
+                    : 'bg-[#cc785c] hover:bg-[#b86a50] text-white shadow-sm'}`}
+              >
+                <Camera className="w-5 h-5" />
+                {cameraState === 'requesting' ? 'Meminta...' : cameraState === 'denied' ? 'Coba Lagi' : 'Aktifkan Kamera'}
+              </button>
+            )}
+
+            {cameraState === 'active' && (
+              <button
+                onClick={handleCapture}
+                className="flex-1 h-12 bg-white hover:bg-[#f4f0e6] border-2 border-[#cc785c] text-[#cc785c] rounded-lg font-bold flex items-center justify-center gap-2 shadow-sm transition-colors"
+              >
+                <Camera className="w-5 h-5" />
+                Jepret Struk
+              </button>
+            )}
           </div>
         </div>
-      )}
 
-      {/* Action buttons */}
-      <div style={{ display: 'flex', gap: '0.75rem', width: '100%', maxWidth: '480px', flexWrap: 'wrap' }}>
-        {/* Start / Retry camera */}
-        {cameraState !== 'active' && cameraState !== 'processing' && (
-          <button
-            onClick={startCamera}
-            disabled={cameraState === 'requesting' || cameraState === 'unavailable'}
-            style={{
-              flex: 1,
-              minWidth: '160px',
-              height: '44px',
-              backgroundColor: (cameraState === 'requesting' || cameraState === 'unavailable') ? '#e6dfd8' : '#cc785c',
-              color: (cameraState === 'requesting' || cameraState === 'unavailable') ? '#6c6a64' : '#ffffff',
-              borderRadius: '0.5rem',
-              border: 'none',
-              fontSize: '0.9375rem',
-              fontWeight: 500,
-              cursor: (cameraState === 'requesting' || cameraState === 'unavailable') ? 'not-allowed' : 'pointer',
-              fontFamily: 'var(--font-sans, Inter, sans-serif)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              transition: 'background-color 150ms ease',
-            }}
-          >
-            <Camera style={{ width: 18, height: 18 }} />
-            {cameraState === 'requesting' ? 'Meminta Izin...' : cameraState === 'denied' ? 'Coba Lagi' : 'Aktifkan Kamera'}
-          </button>
-        )}
+        {/* RIGHT/BOTTOM: Captured Gallery */}
+        <div className="flex-1 w-full bg-white rounded-xl border border-[#e6dfd8] p-4 flex flex-col h-full min-h-[300px]">
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="font-semibold text-[#141413]">Galeri Antrean</h4>
+            <span className="text-xs font-bold bg-[#efe9de] text-[#cc785c] px-2 py-1 rounded-full">
+              {capturedImages.length} Foto
+            </span>
+          </div>
 
-        {/* Capture button */}
-        {cameraState === 'active' && (
-          <button
-            onClick={handleCapture}
-            style={{
-              flex: 1,
-              minWidth: '160px',
-              height: '44px',
-              backgroundColor: '#e6dfd8',
-              color: '#3d3d3a',
-              borderRadius: '0.5rem',
-              border: '1px solid #d5cece',
-              fontSize: '0.9375rem',
-              fontWeight: 500,
-              cursor: 'pointer',
-              fontFamily: 'var(--font-sans, Inter, sans-serif)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-            }}
-          >
-            <Camera style={{ width: 18, height: 18 }} />
-            Ambil Foto
-          </button>
-        )}
-        
-        {/* Process button (only when there are captured images) */}
-        {capturedImages.length > 0 && cameraState !== 'processing' && (
-          <button
-            onClick={processImages}
-            style={{
-              flex: 1,
-              minWidth: '160px',
-              height: '44px',
-              backgroundColor: '#cc785c',
-              color: '#ffffff',
-              borderRadius: '0.5rem',
-              border: 'none',
-              fontSize: '0.9375rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontFamily: 'var(--font-sans, Inter, sans-serif)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-            }}
-          >
-            <Check style={{ width: 18, height: 18 }} />
-            Proses {capturedImages.length} Struk
-          </button>
-        )}
+          {capturedImages.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-[#e6dfd8] rounded-lg bg-[#faf9f5]">
+              <Camera className="w-8 h-8 text-[#d5cece] mb-2" />
+              <p className="text-sm text-[#8e8b82]">Belum ada struk yang difoto. Mulai jepret struk untuk menambahkannya ke antrean di sini.</p>
+            </div>
+          ) : (
+            <div className="flex-1">
+              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-3 gap-3 max-h-[360px] overflow-y-auto pr-1 scrollbar-thin">
+                {capturedImages.map((img, idx) => {
+                  const isCurrent = idx === processingIndex;
+                  const isDone = processingIndex > idx && processingIndex !== -1;
+
+                  return (
+                    <div key={img.id} className="group relative aspect-[3/4] rounded-md overflow-hidden border border-[#e6dfd8] bg-black shadow-sm">
+                      <img src={`data:image/jpeg;base64,${img.base64}`} className="w-full h-full object-cover" alt={`Captured ${idx}`} />
+                      
+                      {/* Overlays */}
+                      {cameraState === 'processing' && isCurrent && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white">
+                          <RefreshCw className="w-5 h-5 animate-spin" />
+                        </div>
+                      )}
+                      {cameraState === 'processing' && isDone && (
+                        <div className="absolute inset-0 bg-[#2b8a3e]/40 flex items-center justify-center">
+                          <div className="bg-white rounded-full p-0.5">
+                            <CheckCircle2 className="w-4 h-4 text-[#2b8a3e]" />
+                          </div>
+                        </div>
+                      )}
+                      {cameraState === 'processing' && !isCurrent && !isDone && (
+                        <div className="absolute inset-0 bg-black/20" />
+                      )}
+
+                      {/* Delete button */}
+                      {cameraState !== 'processing' && (
+                        <button 
+                          onClick={() => removeCapturedImage(img.id)}
+                          className="absolute top-1 right-1 w-6 h-6 bg-white/90 text-[#c64545] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#c64545] hover:text-white shadow-sm"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      
+                      {/* Number badge */}
+                      <div className="absolute bottom-1 left-1 w-5 h-5 bg-black/60 text-white text-[10px] rounded flex items-center justify-center font-bold">
+                        {idx + 1}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="pt-4 mt-auto border-t border-[#e6dfd8]">
+            <button
+              onClick={processImages}
+              disabled={capturedImages.length === 0 || cameraState === 'processing'}
+              className={`w-full h-12 rounded-lg font-bold flex items-center justify-center gap-2 transition-all shadow-sm
+                ${(capturedImages.length === 0 || cameraState === 'processing') 
+                  ? 'bg-[#e6dfd8] text-[#a09d96] cursor-not-allowed' 
+                  : 'bg-[#cc785c] hover:bg-[#b86a50] text-white'}`}
+            >
+              {cameraState === 'processing' ? (
+                <>
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                  Mengekstrak {processingIndex + 1} / {capturedImages.length}...
+                </>
+              ) : (
+                <>
+                  <Check className="w-5 h-5" />
+                  Proses {capturedImages.length} Struk Sekaligus
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
-
-      {/* Hint text */}
-      {cameraState === 'idle' && (
-        <p style={{ fontSize: '0.8125rem', color: '#8e8b82', textAlign: 'center', maxWidth: '360px', fontFamily: 'var(--font-sans, Inter, sans-serif)', lineHeight: 1.5 }}>
-          Browser akan meminta izin kamera saat Anda menekan tombol. Pastikan untuk mengklik <strong>Izinkan</strong> pada dialog yang muncul.
-        </p>
-      )}
-
-      {cameraState === 'denied' && (
-        <p style={{ fontSize: '0.8125rem', color: '#8e8b82', textAlign: 'center', maxWidth: '360px', fontFamily: 'var(--font-sans, Inter, sans-serif)', lineHeight: 1.5 }}>
-          💡 Tip: Klik ikon kunci 🔒 di address bar browser, lalu set izin Kamera ke <strong>Izinkan</strong>.
-        </p>
-      )}
     </div>
   );
 }
