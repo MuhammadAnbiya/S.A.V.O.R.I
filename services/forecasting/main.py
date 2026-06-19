@@ -20,35 +20,57 @@ try:
     model = joblib.load("model_xgb.pkl")
     print("Model loaded successfully.")
 except Exception as e:
-    print(f"Warning: Could not load model_xgb.pkl: {e}. Using simulated data.")
+    print(f"Warning: Could not load model_xgb.pkl: {e}.")
     model = None
 
 @app.post("/predict")
 def predict_sales(req: ForecastRequest):
     try:
-        # Generate future dates
-        base_date = datetime.now()
-        forecast = []
+        import pandas as pd
+        import numpy as np
         
-        # If we had a real model pipeline we would prepare the features here.
-        # For now, we simulate realistic sales data projecting forward.
-        base_revenue = 4500000 
+        if model is None:
+            raise HTTPException(status_code=500, detail="XGBoost model is not loaded.")
+            
+        # Get feature names from model
+        expected_features = model.feature_names_in_ if hasattr(model, 'feature_names_in_') else model.get_booster().feature_names
         
-        for i in range(1, 8): # 7 days forecast
-            target_date = base_date + timedelta(days=i)
+        forecasts = []
+        base_sales = 5000000 # Default base sales
+        today = datetime.now()
+        
+        for i in range(1, req.data_points + 1):
+            target_date = today + timedelta(days=i)
             
-            # Weekend bump
-            multiplier = 1.4 if target_date.weekday() >= 5 else 1.0
-            noise = random.uniform(0.9, 1.1)
+            row = {}
+            for feat in expected_features:
+                if feat == 'year': row[feat] = target_date.year
+                elif feat == 'month': row[feat] = target_date.month
+                elif feat == 'day': row[feat] = target_date.day
+                elif feat == 'dayofweek': row[feat] = target_date.weekday()
+                elif feat == 'dayofyear': row[feat] = target_date.timetuple().tm_yday
+                elif feat == 'weekofyear': row[feat] = target_date.isocalendar()[1]
+                elif feat == 'is_weekend': row[feat] = 1 if target_date.weekday() >= 5 else 0
+                elif feat == 'Total_Penjualan_capped': row[feat] = base_sales
+                else:
+                    if 'rolling_mean' in feat or 'lag' in feat:
+                        row[feat] = base_sales
+                    elif 'sin' in feat or 'cos' in feat:
+                        row[feat] = 0.0
+                    else:
+                        row[feat] = 0.0
+                        
+            df = pd.DataFrame([row])
+            df = df[expected_features]
             
-            predicted_value = int(base_revenue * multiplier * noise)
+            pred = model.predict(df)[0]
             
-            forecast.append({
+            forecasts.append({
                 "date": target_date.strftime("%Y-%m-%d"),
-                "predicted_revenue": predicted_value
+                "predicted_revenue": round(float(pred))
             })
             
-        return {"forecast": forecast}
+        return {"forecast": forecasts}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
