@@ -1,136 +1,137 @@
 'use client';
 
-import { Card } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import React, { useMemo } from 'react';
+import { Card } from '@/components/ui/card';
+import { useCSVData } from '@/lib/csv-context';
+import { parsePOSDate } from '@/lib/csv-parser';
 
 export default function HeatmapPerforma() {
-  const branches = ['Sudirman', 'Kemang', 'Blok M', 'PIK', 'Kelapa Gading'];
+  const { data } = useCSVData();
+
+  const heatmapData = useMemo(() => {
+    const days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+    const timeBlocks = ['06-10', '10-14', '14-18', '18-22', '22-02'];
+    
+    // Initialize matrix
+    const matrix = days.map(() => timeBlocks.map(() => 0));
+
+    if (!data || data.length === 0) {
+      // Demo data
+      const mockValues = [
+        [5, 12, 18, 25, 8],
+        [4, 15, 20, 22, 5],
+        [6, 18, 25, 30, 10],
+        [8, 20, 22, 35, 15],
+        [10, 25, 30, 45, 25],
+        [15, 35, 45, 60, 40],
+        [12, 30, 40, 50, 30],
+      ];
+      return { matrix: mockValues, max: 60 };
+    }
+
+    let maxVal = 0;
+
+    data.forEach(row => {
+      if (row.totalPenjualan <= 0) return;
+      if (!row.tanggalPenjualan || !row.waktuPenjualan) return;
+
+      const dateObj = parsePOSDate(row.tanggalPenjualan);
+      if (dateObj) {
+        let dayIdx = dateObj.getDay() - 1;
+        if (dayIdx === -1) dayIdx = 6; // Sunday
+
+        const hour = parseInt(row.waktuPenjualan.split(':')[0], 10);
+        let timeIdx = 0;
+        if (hour >= 6 && hour < 10) timeIdx = 0;
+        else if (hour >= 10 && hour < 14) timeIdx = 1;
+        else if (hour >= 14 && hour < 18) timeIdx = 2;
+        else if (hour >= 18 && hour < 22) timeIdx = 3;
+        else timeIdx = 4;
+
+        matrix[dayIdx][timeIdx]++;
+        if (matrix[dayIdx][timeIdx] > maxVal) maxVal = matrix[dayIdx][timeIdx];
+      }
+    });
+
+    return { matrix, max: maxVal > 0 ? maxVal : 1 };
+  }, [data]);
+
+  const hasData = data.length > 0;
   const days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+  const timeBlocks = ['06:00 - 10:00', '10:00 - 14:00', '14:00 - 18:00', '18:00 - 22:00', '22:00 - 02:00'];
 
-  // Fixed heatmap data to prevent hydration mismatch
-  const heatmapData = [
-    // Sudirman
-    [
-      { branch: 'Sudirman', day: 'Sen', intensity: 0.6, value: 3100000 },
-      { branch: 'Sudirman', day: 'Sel', intensity: 0.5, value: 2800000 },
-      { branch: 'Sudirman', day: 'Rab', intensity: 0.7, value: 3500000 },
-      { branch: 'Sudirman', day: 'Kam', intensity: 0.8, value: 4200000 },
-      { branch: 'Sudirman', day: 'Jum', intensity: 1.0, value: 5500000 },
-      { branch: 'Sudirman', day: 'Sab', intensity: 0.4, value: 2500000 }, // Office area, low on weekend
-      { branch: 'Sudirman', day: 'Min', intensity: 0.3, value: 2000000 },
-    ],
-    // Kemang
-    [
-      { branch: 'Kemang', day: 'Sen', intensity: 0.3, value: 2100000 },
-      { branch: 'Kemang', day: 'Sel', intensity: 0.4, value: 2500000 },
-      { branch: 'Kemang', day: 'Rab', intensity: 0.5, value: 2800000 },
-      { branch: 'Kemang', day: 'Kam', intensity: 0.7, value: 3500000 },
-      { branch: 'Kemang', day: 'Jum', intensity: 0.9, value: 4800000 },
-      { branch: 'Kemang', day: 'Sab', intensity: 1.0, value: 6500000 }, // Hangout area
-      { branch: 'Kemang', day: 'Min', intensity: 0.9, value: 5200000 },
-    ],
-    // Blok M
-    [
-      { branch: 'Blok M', day: 'Sen', intensity: 0.5, value: 2700000 },
-      { branch: 'Blok M', day: 'Sel', intensity: 0.6, value: 3100000 },
-      { branch: 'Blok M', day: 'Rab', intensity: 0.5, value: 2900000 },
-      { branch: 'Blok M', day: 'Kam', intensity: 0.6, value: 3200000 },
-      { branch: 'Blok M', day: 'Jum', intensity: 0.8, value: 4500000 },
-      { branch: 'Blok M', day: 'Sab', intensity: 1.0, value: 5800000 },
-      { branch: 'Blok M', day: 'Min', intensity: 0.8, value: 4600000 },
-    ],
-    // PIK
-    [
-      { branch: 'PIK', day: 'Sen', intensity: 0.2, value: 1500000 },
-      { branch: 'PIK', day: 'Sel', intensity: 0.3, value: 1800000 },
-      { branch: 'PIK', day: 'Rab', intensity: 0.3, value: 1900000 },
-      { branch: 'PIK', day: 'Kam', intensity: 0.4, value: 2200000 },
-      { branch: 'PIK', day: 'Jum', intensity: 0.7, value: 3800000 },
-      { branch: 'PIK', day: 'Sab', intensity: 1.0, value: 6800000 },
-      { branch: 'PIK', day: 'Min', intensity: 1.0, value: 6500000 },
-    ],
-    // Kelapa Gading
-    [
-      { branch: 'Kelapa Gading', day: 'Sen', intensity: 0.4, value: 2500000 },
-      { branch: 'Kelapa Gading', day: 'Sel', intensity: 0.5, value: 2800000 },
-      { branch: 'Kelapa Gading', day: 'Rab', intensity: 0.4, value: 2600000 },
-      { branch: 'Kelapa Gading', day: 'Kam', intensity: 0.5, value: 2900000 },
-      { branch: 'Kelapa Gading', day: 'Jum', intensity: 0.6, value: 3500000 },
-      { branch: 'Kelapa Gading', day: 'Sab', intensity: 0.9, value: 5100000 },
-      { branch: 'Kelapa Gading', day: 'Min', intensity: 0.8, value: 4800000 },
-    ],
-  ];
-
-  // Helper to determine background color based on intensity
-  const getBackgroundColor = (intensity: number) => {
-    // Opacity scaling of primary color
-    if (intensity < 0.2) return 'bg-[#F1F5F9]';
-    if (intensity < 0.4) return 'bg-[#BAE6FD]'; // light primary-ish
-    if (intensity < 0.6) return 'bg-[#7DD3FC]';
-    if (intensity < 0.8) return 'bg-[#38BDF8]';
-    return 'bg-[#0284C7] text-white'; // dark primary
+  // Function to get color based on intensity
+  const getColor = (val: number, max: number) => {
+    if (val === 0) return 'bg-main';
+    const intensity = val / max;
+    if (intensity < 0.2) return 'bg-[#e2c1b5]'; // very light coral
+    if (intensity < 0.4) return 'bg-[#d8a694]';
+    if (intensity < 0.6) return 'bg-[#ce8b74]';
+    if (intensity < 0.8) return 'bg-[#cc785c]'; // primary coral
+    return 'bg-[#ba6548]'; // dark coral
   };
 
   return (
-    <Card className="p-6 border border-border shadow-sm bg-white overflow-hidden">
-      <div className="mb-6">
-        <h3 className="font-bold text-lg text-text-primary">Heatmap Performa Outlet</h3>
-        <p className="text-sm text-text-secondary">Intensitas transaksi per hari (Relative vs Average)</p>
+    <Card className={`p-6 border shadow-sm h-[400px] flex flex-col bg-white transition-opacity relative ${hasData ? 'border-border opacity-100' : 'border-border/50 opacity-80'}`}>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h3 className="font-bold text-lg text-text-primary">Heatmap Kepadatan</h3>
+          <p className="text-sm text-text-secondary">Konsentrasi transaksi per blok waktu</p>
+        </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="min-w-[500px]">
-          {/* Header */}
-          <div className="flex">
-            <div className="w-32 flex-shrink-0"></div>
-            {days.map(day => (
-              <div key={day} className="flex-1 text-center text-xs font-semibold text-text-secondary pb-2">
+      {!hasData && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+          <div className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-border shadow-sm">
+            <p className="text-xs font-semibold text-text-secondary">Demo Data</p>
+          </div>
+        </div>
+      )}
+
+      <div className={`flex-1 w-full flex flex-col ${!hasData ? 'grayscale opacity-40' : ''}`}>
+        <div className="flex mb-2">
+          <div className="w-12 flex-shrink-0"></div>
+          {timeBlocks.map((tb, i) => (
+            <div key={i} className="flex-1 text-center text-[10px] text-text-secondary font-medium">
+              {tb.split(' - ')[0]}<br/>-<br/>{tb.split(' - ')[1]}
+            </div>
+          ))}
+        </div>
+        
+        <div className="flex-1 flex flex-col gap-1.5">
+          {days.map((day, dIdx) => (
+            <div key={day} className="flex flex-1 items-stretch gap-1.5">
+              <div className="w-12 flex items-center justify-end pr-2 text-xs font-medium text-text-secondary">
                 {day}
               </div>
-            ))}
-          </div>
-
-          {/* Grid */}
-          <div className="space-y-1">
-            <TooltipProvider delayDuration={100}>
-              {heatmapData.map((row, i) => (
-                <div key={branches[i]} className="flex items-center space-x-1">
-                  <div className="w-32 flex-shrink-0 text-sm font-medium text-text-primary truncate pr-2">
-                    {branches[i]}
-                  </div>
-                  {row.map((cell, j) => (
-                    <Tooltip key={`${i}-${j}`}>
-                      <TooltipTrigger asChild>
-                        <div 
-                          className={`flex-1 h-10 rounded ${getBackgroundColor(cell.intensity)} transition-opacity hover:opacity-80 cursor-pointer flex items-center justify-center`}
-                        >
-                          {cell.intensity >= 0.8 && <span className="text-[10px] font-bold">🔥</span>}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent className="bg-bg-card border-border shadow-lg">
-                        <p className="font-bold">{cell.branch} - {cell.day}</p>
-                        <p className="text-sm">Rp {cell.value.toLocaleString('id-ID')}</p>
-                        <p className="text-xs text-text-secondary mt-1">Intensitas: {(cell.intensity * 100).toFixed(0)}%</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  ))}
+              {heatmapData.matrix[dIdx].map((val, tIdx) => (
+                <div 
+                  key={`${dIdx}-${tIdx}`} 
+                  className={`flex-1 rounded-md flex items-center justify-center transition-colors ${getColor(val, heatmapData.max)}`}
+                  title={`${val} transaksi`}
+                >
+                  <span className={`text-[10px] font-bold ${val > (heatmapData.max * 0.5) ? 'text-white' : 'text-text-primary'}`}>
+                    {hasData ? val : 0}
+                  </span>
                 </div>
               ))}
-            </TooltipProvider>
+            </div>
+          ))}
+        </div>
+        
+        {/* Legend */}
+        <div className="mt-4 flex items-center justify-end gap-2 text-[10px] text-text-secondary">
+          <span>Sepi</span>
+          <div className="flex gap-1">
+            <div className="w-3 h-3 rounded-sm bg-main"></div>
+            <div className="w-3 h-3 rounded-sm bg-[#e2c1b5]"></div>
+            <div className="w-3 h-3 rounded-sm bg-[#d8a694]"></div>
+            <div className="w-3 h-3 rounded-sm bg-[#ce8b74]"></div>
+            <div className="w-3 h-3 rounded-sm bg-[#cc785c]"></div>
+            <div className="w-3 h-3 rounded-sm bg-[#ba6548]"></div>
           </div>
+          <span>Ramai</span>
         </div>
-      </div>
-
-      <div className="mt-6 flex items-center justify-end space-x-2 text-xs text-text-secondary">
-        <span>Low</span>
-        <div className="flex space-x-1">
-          <div className="w-4 h-4 rounded bg-[#F1F5F9]"></div>
-          <div className="w-4 h-4 rounded bg-[#BAE6FD]"></div>
-          <div className="w-4 h-4 rounded bg-[#7DD3FC]"></div>
-          <div className="w-4 h-4 rounded bg-[#38BDF8]"></div>
-          <div className="w-4 h-4 rounded bg-[#0284C7]"></div>
-        </div>
-        <span>High</span>
       </div>
     </Card>
   );

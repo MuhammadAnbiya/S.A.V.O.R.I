@@ -6,7 +6,7 @@ import TransactionTable from '@/components/crud/TransactionTable';
 import BulkActions from '@/components/crud/BulkActions';
 import EditModal from '@/components/crud/EditModal';
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Filter, X } from "lucide-react";
 
 export default function DatabasePage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -17,6 +17,7 @@ export default function DatabasePage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [sidebarFilters, setSidebarFilters] = useState<any>({});
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
 
   // Fetch data on load
   const fetchTransactions = async () => {
@@ -160,32 +161,55 @@ export default function DatabasePage() {
     document.body.removeChild(link);
   };
 
-  // const uniqueBranches = Array.from(new Set(transactions.map(t => t.branch).filter(Boolean)));
   const uniqueBranches = ['Pusat'];
+
+  const activeFilterCount = Object.keys(sidebarFilters).filter(k => {
+    const v = sidebarFilters[k];
+    if (Array.isArray(v)) return v.length > 0;
+    return !!v;
+  }).length;
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Database Transaksi</h1>
+          <p style={{ fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#cc785c', marginBottom: '0.25rem', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
+            Riwayat Transaksi
+          </p>
+          <h1 style={{ fontFamily: 'var(--font-display, "Cormorant Garamond", serif)', fontSize: '2.25rem', fontWeight: 400, lineHeight: 1.15, letterSpacing: '-0.02em', color: '#141413' }}>
+            Database Pembelian
+          </h1>
           <p className="text-sm text-text-secondary mt-1">
-            Manajemen dan pantau semua data transaksi pengeluaran dan pemasukan.
+            Kelola dan pantau semua riwayat pengeluaran dan pembelian bisnis Anda.
           </p>
         </div>
-        <Button variant="outline" className="bg-white" onClick={handleExportCSV}>
-          <Download className="w-4 h-4 mr-2" /> Export CSV
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Toggle Filter Button */}
+          <Button 
+            variant="outline" 
+            className={`bg-white ${isFilterOpen ? 'border-primary text-primary' : ''}`}
+            onClick={() => setIsFilterOpen(v => !v)}
+          >
+            {isFilterOpen ? <X className="w-4 h-4 mr-2" /> : <Filter className="w-4 h-4 mr-2" />}
+            {isFilterOpen ? 'Tutup Filter' : `Filter${activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}`}
+          </Button>
+          <Button variant="outline" className="bg-white" onClick={handleExportCSV}>
+            <Download className="w-4 h-4 mr-2" /> Export CSV
+          </Button>
+        </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 items-start h-auto lg:h-[calc(100vh-180px)]">
-        {/* Kolom 1: Filter Sidebar (Lebar tetap) */}
-        <div className="w-full lg:w-72 flex-shrink-0 h-auto lg:h-full lg:overflow-y-auto mb-4 lg:mb-0">
-          <FilterSidebar 
-            onApply={setSidebarFilters} 
-            onReset={() => setSidebarFilters({})} 
-            branches={uniqueBranches}
-          />
-        </div>
+      <div className="flex flex-col lg:flex-row gap-6 items-start h-auto lg:h-[calc(100vh-220px)]">
+        {/* Kolom 1: Filter Sidebar (Collapsible) */}
+        {isFilterOpen && (
+          <div className="w-full lg:w-72 flex-shrink-0 h-auto lg:h-full lg:overflow-y-auto mb-4 lg:mb-0 transition-all duration-300">
+            <FilterSidebar 
+              onApply={setSidebarFilters} 
+              onReset={() => setSidebarFilters({})} 
+              branches={uniqueBranches}
+            />
+          </div>
+        )}
 
         {/* Kolom 2: Transaction Table (Mengisi sisa ruang) */}
         <div className="flex-1 w-full min-h-[500px] lg:h-full min-w-0">
@@ -196,11 +220,6 @@ export default function DatabasePage() {
             onSelectionChange={setSelectedIds}
           />
         </div>
-        
-        {/* Kolom 3: (Optional) Talk to Data / Chatbot placeholder */}
-        {/* <div className="w-80 flex-shrink-0 h-full hidden xl:block"> */}
-        {/*   <ChatbotPanel /> */}
-        {/* </div> */}
       </div>
 
       {/* Bulk Actions Floating Bar */}

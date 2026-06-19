@@ -1,13 +1,11 @@
 'use client';
 
-const prompts = [
-  'Ringkasan penjualan minggu ini',
-  'Top 5 produk terlaris bulan lalu',
-  'Bandingkan cabang Sudirman vs Kemang',
-  'Prediksi pendapatan minggu depan',
-];
+interface QuickPromptsProps {
+  prompts: string[];
+  onSelect: (prompt: string) => void;
+}
 
-export default function QuickPrompts({ onSelect }: { onSelect: (prompt: string) => void }) {
+export default function QuickPrompts({ prompts, onSelect }: QuickPromptsProps) {
   return (
     <div
       style={{
@@ -31,7 +29,7 @@ export default function QuickPrompts({ onSelect }: { onSelect: (prompt: string) 
             fontWeight: 500,
             cursor: 'pointer',
             fontFamily: 'var(--font-sans, Inter, sans-serif)',
-            transition: 'background-color 150ms ease, border-color 150ms ease',
+            transition: 'all 150ms ease',
             textAlign: 'left',
             lineHeight: 1.4,
           }}

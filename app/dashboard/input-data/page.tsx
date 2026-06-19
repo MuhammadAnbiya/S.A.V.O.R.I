@@ -11,9 +11,15 @@ export default function InputDataUnifiedPage() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold">Input Data Transaksi</h1>
+        {/* Caption label — coral uppercase */}
+        <p style={{ fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#cc785c', marginBottom: '0.25rem', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
+          Catat Pengeluaran
+        </p>
+        <h1 style={{ fontFamily: 'var(--font-display, "Cormorant Garamond", serif)', fontSize: '2.25rem', fontWeight: 400, lineHeight: 1.15, letterSpacing: '-0.02em', color: '#141413' }}>
+          Input Pembelian
+        </h1>
         <p className="text-sm text-text-secondary mt-1">
-          Pilih metode untuk memasukkan data struk atau transaksi Anda ke dalam sistem.
+          Pilih metode untuk mencatat pembelian atau pengeluaran bisnis Anda ke dalam sistem.
         </p>
       </div>
 
@@ -38,18 +44,38 @@ export default function InputDataUnifiedPage() {
         </TabsList>
 
         <TabsContent value="voice" className="mt-0">
+          <div className="text-center mb-6">
+            <p className="text-sm text-text-secondary max-w-xl mx-auto">
+              Sebutkan detail pembelian Anda secara lisan — AI akan mencatat vendor, jumlah, dan kategori secara otomatis. Cocok untuk pencatatan cepat satu atau beberapa transaksi.
+            </p>
+          </div>
           <VoiceUploader />
         </TabsContent>
 
         <TabsContent value="scanner" className="mt-0">
+          <div className="text-center mb-6">
+            <p className="text-sm text-text-secondary max-w-xl mx-auto">
+              Arahkan kamera ke struk belanja — AI akan membaca dan mengekstrak data pembelian dari foto struk secara otomatis.
+            </p>
+          </div>
           <CameraScanner />
         </TabsContent>
 
         <TabsContent value="upload" className="mt-0">
+          <div className="text-center mb-6">
+            <p className="text-sm text-text-secondary max-w-xl mx-auto">
+              Unggah foto struk belanja dari galeri perangkat Anda. Mendukung upload satu atau beberapa foto sekaligus untuk pencatatan batch.
+            </p>
+          </div>
           <FileUploader />
         </TabsContent>
 
         <TabsContent value="manual" className="mt-0">
+          <div className="text-center mb-6">
+            <p className="text-sm text-text-secondary max-w-xl mx-auto">
+              Isi form secara manual untuk mencatat pembelian yang tidak memiliki struk — seperti pembayaran tunai, transfer, atau pengeluaran operasional.
+            </p>
+          </div>
           <div className="bg-bg-card rounded-lg shadow-sm border border-border p-6">
             <ManualInputForm />
           </div>
