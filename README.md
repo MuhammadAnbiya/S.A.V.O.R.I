@@ -36,11 +36,15 @@ Aplikasi ini menggunakan teknologi AI tingkat lanjut untuk menyederhanakan *data
 
 ---
 
-## 🛠️ Tautan Model AI / ML
-Proyek ini menggunakan model **XGBoost (savori_forecast_model.pkl)** untuk fitur prediksi pendapatan (Forecasting).
-🔗 **[Tautan Download Model XGBoost (.pkl) di Google Drive](#masukkan-link-google-drive-anda-disini)**
+## 🛠️ Tautan Model AI / ML & Notebook
+Proyek ini menggunakan model **XGBoost** untuk fitur prediksi pendapatan (Forecasting). Seluruh proses pelatihan (*training*), evaluasi model, dan *data preprocessing* terdapat di dalam file Jupyter Notebook yang disertakan.
 
-> **Catatan untuk Tim Penilai**: Model telah diunggah ke Google Drive dan diatur agar akun **pijak@student.devacademy.id** memiliki akses untuk melihat dan mengunduh.
+- **Notebook Pelatihan (Source Code AI)**: Anda dapat melihat dan menjalankan file `Model_Timeseries.ipynb` yang berada di *root* direktori (atau buka menggunakan Google Colab / Jupyter).
+- **File Model Pre-trained (.pkl)**: Model hasil *training* telah diunggah ke Google Drive.
+
+🔗 **[Tautan Download Model XGBoost (.pkl) di Google Drive](https://drive.google.com/drive/folders/1dnweuhweCJoxlpFygEU23-cms1-SQBQ3?usp=sharing)**
+
+> **Catatan untuk Tim Penilai**: Folder Google Drive di atas berisi file model ML dan telah diatur akses "*Viewer*" untuk akun **pijak@student.devacademy.id**.
 
 ---
 
