@@ -10,6 +10,6 @@ COPY . .
 # Pastikan model_xgb.pkl disalin ke dalam container
 # COPY model_xgb.pkl .
 
-EXPOSE 8000
+EXPOSE 7860
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
