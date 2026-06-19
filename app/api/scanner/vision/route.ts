@@ -108,7 +108,7 @@ function sanitizeReceiptData(raw: Record<string, unknown>): SanitizedReceipt {
 
   const dateRaw = raw.transaction_date;
   let dateVal = String(extractVal(dateRaw, '')).trim();
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(dateVal)) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
     dateVal = todayStr;
   }
   const parsedDate = new Date(dateVal + 'T00:00:00Z');

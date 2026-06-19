@@ -284,31 +284,23 @@ export function parseTextRegex(fullText: string, ocrConfidence: number): Receipt
 // ── Main Entry Point with API Fallback ──────────────────────────
 
 export async function extractReceiptWithOCR(imageBase64: string, mimeType: string): Promise<ReceiptResult> {
-  try {
-    console.log('[Receipt Scanner] Sending image directly to Gemini Vision API...');
-    const response = await fetch('/api/scanner/vision', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageBase64, mimeType })
-    });
+  const response = await fetch('/api/scanner/vision', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imageBase64, mimeType })
+  });
 
-    if (response.ok) {
-      const result = await response.json();
-      if (result.status === 'success' && result.data) {
-        console.log('[Receipt Scanner] Successfully parsed via Gemini Vision');
-        return result.data;
-      }
+  if (response.ok) {
+    const result = await response.json();
+    if (result.status === 'success' && result.data) {
+      return result.data;
     }
-
-    // If Vision API fails (e.g. quota, error), we throw an error so the fallback UI can catch it
-    const errBody = await response.text();
-    console.error('[Receipt Scanner] Vision API failed:', errBody);
-    throw new Error('Gagal memproses gambar melalui AI Vision.');
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('OCR main thread error:', message);
-    return createEmptyResult('Gagal memproses gambar. Coba foto ulang dengan pencahayaan yang lebih baik.');
   }
+
+  // If Vision API fails (e.g. quota, error), return an empty result
+  // so the batch processor can skip this file and continue with others
+  console.warn('[Receipt Scanner] Vision API returned non-success response');
+  return createEmptyResult('Gagal memproses gambar. Coba foto ulang dengan pencahayaan yang lebih baik.');
 }
 
 function createEmptyResult(errorMsg: string): ReceiptResult {

@@ -86,24 +86,17 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
   const processedTransactions = React.useMemo(() => {
     let result = [...transactions];
     
-    // 1. Search & Auto Expand
+    // 1. Search
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      const newExpanded = new Set<string>();
       
       result = result.filter((t: any) => {
         const itemMatch = t.items?.some((item: any) => (item.name?.toLowerCase() || '').includes(q));
-        if (itemMatch) {
-          newExpanded.add(t.id);
-        }
         
         return (t.vendor?.toLowerCase() || '').includes(q) || 
                (t.category?.toLowerCase() || '').includes(q) ||
                itemMatch;
       });
-      
-      // Auto expand rows with item matches
-      setExpandedIds(newExpanded);
     }
 
     // 2. Sort
@@ -120,6 +113,18 @@ export default function TransactionTable({ transactions, onEdit, onDelete, onSel
 
     return result;
   }, [transactions, searchQuery, sortOption]);
+
+  // Auto-expand rows whose items match the search query (side-effect, belongs in useEffect)
+  React.useEffect(() => {
+    if (!searchQuery) return;
+    const q = searchQuery.toLowerCase();
+    const newExpanded = new Set<string>();
+    transactions.forEach((t: any) => {
+      const itemMatch = t.items?.some((item: any) => (item.name?.toLowerCase() || '').includes(q));
+      if (itemMatch) newExpanded.add(t.id);
+    });
+    setExpandedIds(newExpanded);
+  }, [searchQuery, transactions]);
 
   const totalPages = Math.ceil(processedTransactions.length / itemsPerPage);
   const paginatedTransactions = processedTransactions.slice(

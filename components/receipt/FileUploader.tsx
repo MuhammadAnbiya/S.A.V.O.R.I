@@ -68,7 +68,11 @@ export default function FileUploader() {
   };
 
   const removeFile = (indexToRemove: number) => {
-    setSelectedFiles(prev => prev.filter((_, idx) => idx !== indexToRemove));
+    setSelectedFiles(prev => {
+      // Revoke the object URL to free memory
+      URL.revokeObjectURL(prev[indexToRemove].url);
+      return prev.filter((_, idx) => idx !== indexToRemove);
+    });
   };
 
   const resetAll = () => {
@@ -144,6 +148,8 @@ export default function FileUploader() {
       return;
     }
 
+    // Revoke all object URLs to free memory
+    selectedFiles.forEach(f => URL.revokeObjectURL(f.url));
     setExtractionResults(results);
     setSelectedFiles([]); // clear queue
     setIsProcessing(false);
