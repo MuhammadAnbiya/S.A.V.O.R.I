@@ -13,10 +13,11 @@ import { Trash2, Plus, AlertCircle, Check } from 'lucide-react';
 interface ExtractionResultProps {
   initialData: any;
   onCancel?: () => void;
+  onSuccess?: () => void;
   source?: string;
 }
 
-export default function ExtractionResult({ initialData, onCancel, source = 'Scanner' }: ExtractionResultProps) {
+export default function ExtractionResult({ initialData, onCancel, onSuccess, source = 'Scanner' }: ExtractionResultProps) {
   const router = useRouter();
   const [data, setData] = useState({
     vendor_name: initialData?.vendor_name?.value || '',
@@ -144,7 +145,12 @@ export default function ExtractionResult({ initialData, onCancel, source = 'Scan
       }
 
       toast.success('Transaksi berhasil disimpan!');
-      router.push('/dashboard/database');
+      
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push('/dashboard/database');
+      }
     } catch (error) {
       console.error(error);
       toast.error('Gagal menyimpan transaksi ke database.');

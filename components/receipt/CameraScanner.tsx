@@ -1,21 +1,26 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, RefreshCw, AlertCircle, ShieldAlert, VideoOff } from 'lucide-react';
+import { Camera, RefreshCw, AlertCircle, ShieldAlert, VideoOff, Check, X } from 'lucide-react';
 import ExtractionResult from './ExtractionResult';
 import { toast } from 'sonner';
 import LoadingTextRotator from './LoadingTextRotator';
+import { useRouter } from 'next/navigation';
 
 type CameraState = 'idle' | 'requesting' | 'active' | 'denied' | 'unavailable' | 'processing';
 
 export default function CameraScanner() {
+  const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   const [cameraState, setCameraState] = useState<CameraState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [extractionResult, setExtractionResult] = useState<any | null>(null);
+  const [capturedImages, setCapturedImages] = useState<string[]>([]);
+  const [extractionResults, setExtractionResults] = useState<any[]>([]);
+  const [processingIndex, setProcessingIndex] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
 
   // Stop and release camera stream
   const stopCamera = useCallback(() => {
@@ -33,12 +38,11 @@ export default function CameraScanner() {
     return () => stopCamera();
   }, [stopCamera]);
 
-  // Request camera permission (triggered by user click, not auto)
+  // Request camera permission
   const startCamera = async () => {
     setErrorMessage(null);
     setCameraState('requesting');
 
-    // Check if mediaDevices is available at all
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setCameraState('unavailable');
       setErrorMessage('Browser Anda tidak mendukung akses kamera. Coba gunakan Chrome atau Firefox terbaru.');
@@ -60,10 +64,9 @@ export default function CameraScanner() {
       const errorName: string = err?.name || '';
 
       if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
-        // User explicitly denied OR dismissed the dialog
-        toast.error("Microphone/Camera access blocked. Please allow permissions in your browser settings (click the lock icon in the URL bar) to use this feature.");
+        toast.error("Akses Kamera diblokir. Silakan izinkan di pengaturan browser Anda.");
         setCameraState('denied');
-        setErrorMessage('Izin kamera ditolak atau dibatalkan. Klik tombol di bawah untuk coba lagi, atau izinkan kamera melalui pengaturan browser Anda.');
+        setErrorMessage('Izin kamera ditolak. Izinkan kamera melalui pengaturan browser Anda, lalu coba lagi.');
       } else if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
         setCameraState('unavailable');
         setErrorMessage('Tidak ditemukan kamera yang tersedia di perangkat ini.');
@@ -71,7 +74,6 @@ export default function CameraScanner() {
         setCameraState('unavailable');
         setErrorMessage('Kamera sedang digunakan oleh aplikasi lain. Tutup aplikasi lain dan coba lagi.');
       } else if (errorName === 'OverconstrainedError') {
-        // Retry without constraints
         try {
           const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
           streamRef.current = fallbackStream;
@@ -83,13 +85,13 @@ export default function CameraScanner() {
         }
       } else {
         setCameraState('denied');
-        setErrorMessage(`Gagal mengakses kamera: ${err?.message || 'Unknown error'}. Coba lagi atau gunakan opsi Upload File.`);
+        setErrorMessage(`Gagal mengakses kamera: ${err?.message || 'Unknown error'}. Coba gunakan opsi Upload File.`);
       }
     }
   };
 
-  // Capture frame and send to Gemini
-  const handleCapture = async () => {
+  // Capture frame
+  const handleCapture = () => {
     if (!videoRef.current || !canvasRef.current || cameraState !== 'active') return;
 
     const video = videoRef.current;
@@ -102,57 +104,101 @@ export default function CameraScanner() {
     if (!ctx) return;
 
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Convert to JPEG base64 and add to queue
     const imageBase64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+    
+    setCapturedImages(prev => [...prev, imageBase64]);
+    toast.success("Foto ditambahkan ke antrean!");
+  };
 
+  const removeCapturedImage = (index: number) => {
+    setCapturedImages(prev => prev.filter((_, idx) => idx !== index));
+  };
+
+  // Process all captured images
+  const processImages = async () => {
+    if (capturedImages.length === 0) return;
+    
     stopCamera();
     setCameraState('processing');
     setErrorMessage(null);
-
-    try {
-      // Import secara dinamis agar Tesseract hanya diload di sisi client saat dibutuhkan
-      const { extractReceiptWithOCR } = await import('@/lib/receipt-ocr');
+    
+    const results = [];
+    
+    for (let i = 0; i < capturedImages.length; i++) {
+      setProcessingIndex(i + 1);
+      const base64 = capturedImages[i];
       
-      const result = await extractReceiptWithOCR(imageBase64, 'image/jpeg');
+      try {
+        const { extractReceiptWithOCR } = await import('@/lib/receipt-ocr');
+        const result = await extractReceiptWithOCR(base64, 'image/jpeg');
 
-      // Validate result — confidence === 0 means total OCR failure
-      if (!result || (result.vendor_name.confidence === 0 && result.total_amount.confidence === 0)) {
-        throw new Error('Gambar tidak terbaca dengan baik. Coba foto ulang dengan teks yang lebih jelas.');
+        if (!result || (result.vendor_name.confidence === 0 && result.total_amount.confidence === 0)) {
+          console.warn(`Foto ${i+1} gagal dibaca dengan baik.`);
+        }
+
+        results.push(result);
+      } catch (err: any) {
+        console.error(`Error pada foto ${i+1}:`, err);
+        results.push(null);
       }
-
-      setExtractionResult(result);
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Terjadi kesalahan saat memproses gambar. Coba scan ulang.');
+    }
+    
+    const validResults = results.filter(r => r !== null);
+    if (validResults.length === 0) {
+      setErrorMessage("Semua foto gagal diproses. Coba foto ulang dengan pencahayaan dan fokus yang lebih baik.");
       setCameraState('idle');
+      return;
+    }
+
+    setExtractionResults(validResults);
+    setCapturedImages([]); // clear images
+  };
+
+  const resetAll = () => {
+    setExtractionResults([]);
+    setCapturedImages([]);
+    setCameraState('idle');
+    setErrorMessage(null);
+    setCompletedCount(0);
+  };
+
+  const handleCurrentSuccessOrSkip = () => {
+    if (extractionResults.length <= 1) {
+      toast.success("Semua struk berhasil diproses!");
+      router.push('/dashboard/database');
+    } else {
+      setExtractionResults(prev => prev.slice(1));
+      setCompletedCount(c => c + 1);
     }
   };
 
-  const handleRetake = () => {
-    setExtractionResult(null);
-    setCameraState('idle');
-    setErrorMessage(null);
-  };
-
-  // ── Extraction result view
-  if (extractionResult) {
+  // ── Extraction result view (Queue-based)
+  if (extractionResults.length > 0) {
+    const currentResult = extractionResults[0];
+    const totalFilesCount = completedCount + extractionResults.length;
+    
     return (
       <div className="space-y-4">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
           <div>
-            <p style={{ fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#cc785c', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}>
-              Hasil Scan
-            </p>
-            <h2 style={{ fontFamily: 'var(--font-display, serif)', fontSize: '1.5rem', fontWeight: 400, letterSpacing: '-0.02em', color: '#141413' }}>
-              Verifikasi Data Struk
-            </h2>
+            <h2 className="text-xl font-bold text-primary">Verifikasi Batch</h2>
+            <p className="text-sm text-text-secondary mt-1">Struk ke-{completedCount + 1} dari {totalFilesCount}</p>
           </div>
           <button
-            onClick={handleRetake}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', height: '36px', padding: '0 0.875rem', borderRadius: '0.5rem', border: '1px solid #e6dfd8', backgroundColor: '#faf9f5', color: '#3d3d3a', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}
+            onClick={resetAll}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', height: '36px', padding: '0 0.875rem', borderRadius: '0.5rem', border: '1px solid #e6dfd8', backgroundColor: '#faf9f5', color: '#c64545', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-sans, Inter, sans-serif)' }}
           >
-            <RefreshCw className="h-4 w-4" /> Scan Ulang
+            Batalkan Semua
           </button>
         </div>
-        <ExtractionResult initialData={extractionResult} source="Kamera" />
+        <ExtractionResult 
+          initialData={currentResult} 
+          onCancel={handleCurrentSuccessOrSkip} 
+          onSuccess={handleCurrentSuccessOrSkip} 
+          source="Kamera" 
+        />
       </div>
     );
   }
@@ -178,7 +224,6 @@ export default function CameraScanner() {
       <div
         style={{ position: 'relative', width: '100%', maxWidth: '400px', aspectRatio: '3/4', backgroundColor: '#181715', borderRadius: '0.75rem', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
-        {/* Video feed — always rendered so ref is available */}
         <video
           ref={videoRef}
           autoPlay
@@ -187,15 +232,12 @@ export default function CameraScanner() {
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: cameraState === 'active' ? 'block' : 'none' }}
         />
 
-        {/* Capture guide overlay */}
         {cameraState === 'active' && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-            {/* Outline berbentuk vertikal memanjang (menyerupai struk belanja) */}
             <div style={{ width: '65%', height: '85%', border: '2px solid rgba(204,120,92,0.8)', borderRadius: '0.5rem', boxShadow: '0 0 0 9999px rgba(0,0,0,0.45)' }} />
           </div>
         )}
 
-        {/* Idle state */}
         {(cameraState === 'idle' || cameraState === 'denied') && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', padding: '2rem', textAlign: 'center' }}>
             <VideoOff style={{ width: 40, height: 40, color: '#a09d96' }} />
@@ -205,7 +247,6 @@ export default function CameraScanner() {
           </div>
         )}
 
-        {/* Requesting permission */}
         {cameraState === 'requesting' && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', padding: '2rem', textAlign: 'center' }}>
             <RefreshCw style={{ width: 36, height: 36, color: '#cc785c', animation: 'spin 1s linear infinite' }} />
@@ -215,14 +256,13 @@ export default function CameraScanner() {
           </div>
         )}
 
-        {/* Processing */}
         {cameraState === 'processing' && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(24,23,21,0.9)', gap: '1rem' }}>
             <RefreshCw style={{ width: 36, height: 36, color: '#cc785c', animation: 'spin 1s linear infinite' }} />
             <p style={{ color: '#faf9f5', fontSize: '0.9375rem', fontWeight: 500, fontFamily: 'var(--font-sans, Inter, sans-serif)', textAlign: 'center', padding: '0 1rem' }}>
               <LoadingTextRotator 
                 texts={[
-                  "Uploading transaction artifact...",
+                  `Memproses foto ${processingIndex} dari ${capturedImages.length}...`,
                   "Analyzing layout with Qwen VL...",
                   "Parsing itemized line details...",
                   "Categorizing financial data..."
@@ -235,7 +275,6 @@ export default function CameraScanner() {
           </div>
         )}
 
-        {/* Unavailable */}
         {cameraState === 'unavailable' && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', padding: '2rem', textAlign: 'center' }}>
             <AlertCircle style={{ width: 36, height: 36, color: '#c64545' }} />
@@ -247,9 +286,29 @@ export default function CameraScanner() {
 
         <canvas ref={canvasRef} style={{ display: 'none' }} />
       </div>
+      
+      {/* Captured thumbnails */}
+      {capturedImages.length > 0 && cameraState !== 'processing' && (
+        <div className="w-full max-w-md flex flex-col gap-2">
+          <p className="text-sm font-semibold text-text-secondary">{capturedImages.length} Foto Tersimpan</p>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+            {capturedImages.map((base64, idx) => (
+              <div key={idx} className="relative flex-shrink-0 w-16 h-20 rounded overflow-hidden border-2 border-primary/20 bg-black">
+                <img src={`data:image/jpeg;base64,${base64}`} className="w-full h-full object-cover" alt={`Captured ${idx}`} />
+                <button 
+                  onClick={() => removeCapturedImage(idx)}
+                  className="absolute top-0.5 right-0.5 bg-danger text-white rounded-full p-0.5 hover:bg-danger-hover"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Action buttons */}
-      <div style={{ display: 'flex', gap: '0.75rem', width: '100%', maxWidth: '480px' }}>
+      <div style={{ display: 'flex', gap: '0.75rem', width: '100%', maxWidth: '480px', flexWrap: 'wrap' }}>
         {/* Start / Retry camera */}
         {cameraState !== 'active' && cameraState !== 'processing' && (
           <button
@@ -257,6 +316,7 @@ export default function CameraScanner() {
             disabled={cameraState === 'requesting' || cameraState === 'unavailable'}
             style={{
               flex: 1,
+              minWidth: '160px',
               height: '44px',
               backgroundColor: (cameraState === 'requesting' || cameraState === 'unavailable') ? '#e6dfd8' : '#cc785c',
               color: (cameraState === 'requesting' || cameraState === 'unavailable') ? '#6c6a64' : '#ffffff',
@@ -284,11 +344,12 @@ export default function CameraScanner() {
             onClick={handleCapture}
             style={{
               flex: 1,
+              minWidth: '160px',
               height: '44px',
-              backgroundColor: '#cc785c',
-              color: '#ffffff',
+              backgroundColor: '#e6dfd8',
+              color: '#3d3d3a',
               borderRadius: '0.5rem',
-              border: 'none',
+              border: '1px solid #d5cece',
               fontSize: '0.9375rem',
               fontWeight: 500,
               cursor: 'pointer',
@@ -300,7 +361,34 @@ export default function CameraScanner() {
             }}
           >
             <Camera style={{ width: 18, height: 18 }} />
-            Ambil Foto & Scan
+            Ambil Foto
+          </button>
+        )}
+        
+        {/* Process button (only when there are captured images) */}
+        {capturedImages.length > 0 && cameraState !== 'processing' && (
+          <button
+            onClick={processImages}
+            style={{
+              flex: 1,
+              minWidth: '160px',
+              height: '44px',
+              backgroundColor: '#cc785c',
+              color: '#ffffff',
+              borderRadius: '0.5rem',
+              border: 'none',
+              fontSize: '0.9375rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'var(--font-sans, Inter, sans-serif)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+            }}
+          >
+            <Check style={{ width: 18, height: 18 }} />
+            Proses {capturedImages.length} Struk
           </button>
         )}
       </div>
