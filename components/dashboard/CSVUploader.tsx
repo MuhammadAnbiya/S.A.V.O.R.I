@@ -129,6 +129,20 @@ export default function CSVUploader() {
           <p className="text-sm text-text-secondary max-w-sm">
             Tarik & lepas file .csv laporan kasir Anda ke area ini, atau klik untuk memilih file.
           </p>
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="mt-4 text-xs font-semibold text-[#cc785c] hover:text-[#b06349] transition-colors relative z-10"
+          >
+            <a 
+              href="https://drive.google.com/drive/folders/1XsPgQbFz9hydW4x4lPiiNp9yNSBNe7cr?usp=sharing" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#cc785c]/10 rounded-full hover:bg-[#cc785c]/20 transition-all duration-200"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              Download Data Testing (CSV & Foto Struk)
+            </a>
+          </div>
         </div>
       )}
     </div>
