@@ -36,15 +36,16 @@ Aplikasi ini menggunakan teknologi AI tingkat lanjut untuk menyederhanakan *data
 
 ---
 
-## 🛠️ Tautan Model AI / ML & Notebook
+## 🛠️ Tautan Model AI / ML & Data Testing
 Proyek ini menggunakan model **XGBoost** untuk fitur prediksi pendapatan (Forecasting). Seluruh proses pelatihan (*training*), evaluasi model, dan *data preprocessing* terdapat di dalam file Jupyter Notebook yang disertakan.
 
 - **Notebook Pelatihan (Source Code AI)**: Anda dapat melihat dan menjalankan file `Model_Timeseries.ipynb` yang berada di *root* direktori (atau buka menggunakan Google Colab / Jupyter).
 - **File Model Pre-trained (.pkl)**: Model hasil *training* telah diunggah ke Google Drive.
+  🔗 **[Tautan Download Model XGBoost (.pkl) di Google Drive](https://drive.google.com/drive/folders/1dnweuhweCJoxlpFygEU23-cms1-SQBQ3?usp=sharing)**
+- **Data Uji / Testing Data (CSV & Foto Struk)**: Data sampel untuk menguji fitur *CSV POS Upload* dan pemindaian *Receipt OCR*.
+  🔗 **[Tautan Download Data Testing (CSV & Contoh Struk) di Google Drive](https://drive.google.com/drive/folders/1XsPgQbFz9hydW4x4lPiiNp9yNSBNe7cr?usp=sharing)**
 
-🔗 **[Tautan Download Model XGBoost (.pkl) di Google Drive](https://drive.google.com/drive/folders/1dnweuhweCJoxlpFygEU23-cms1-SQBQ3?usp=sharing)**
-
-> **Catatan untuk Tim Penilai**: Folder Google Drive di atas berisi file model ML dan telah diatur akses "*Viewer*" untuk akun **pijak@student.devacademy.id**.
+> **Catatan untuk Tim Penilai**: Kedua folder Google Drive di atas telah diatur dengan akses "*Viewer*" untuk akun **pijak@student.devacademy.id**. Silakan unduh file `.csv` di folder *Data Testing* untuk diunggah pada *Super Dashboard* aplikasi.
 
 ---
 
